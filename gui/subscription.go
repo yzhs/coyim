@@ -92,7 +92,7 @@ func (acd *addContactDialog) initAccounts(accounts []*account) {
 }
 
 func (acd *addContactDialog) init() {
-	acd.builder = newBuilder("AddContact")
+	acd.builder = newBuilder("AddContact2")
 	acd.builder.getItems(
 		"AddContact", &acd.dialog,
 		"accounts-model", &acd.model,
@@ -109,10 +109,25 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 	acd := &addContactDialog{}
 	acd.init()
 	acd.initAccounts(accounts)
+	acd.dialog.ShowAll()
+	cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
+	page, _ := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+	acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
 
 	acd.builder.ConnectSignals(map[string]interface{}{
-		"on_close_signal": func() {
+		"on_cancel_signal": func() {
 			acd.dialog.Destroy()
+		},
+		"on_escape_signal": func() {
+			acd.dialog.Destroy()
+		},
+		"on_prepare_signal": func() {
+			cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
+			page, _ := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+			acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
+		},
+		"on_apply_signal": func() {
+			acd.dialog.(gtki.Assistant).NextPage()
 		},
 		"on_save_signal": func() {
 			contact, ok := acd.getVerifiedContact()
