@@ -1,8 +1,11 @@
 package gui
 
 import (
+	"bytes"
+	"crypto/rand"
 	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/twstrike/coyim/i18n"
 	"github.com/twstrike/gotk3adapter/gtki"
@@ -143,12 +146,17 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 type smpWizard struct {
 	builder *builder
 	wizard  gtki.Assistant
+	pin     gtki.Label
 }
 
 func showSMPWizard() {
 	w := &smpWizard{}
-	w.builder = newBuilder("AddContact2")
-	w.builder.getItems("AddContact", &w.wizard)
+	w.builder = newBuilder("SMPWizard")
+	w.builder.getItems(
+		"SMPWizard", &w.wizard,
+		"PinLabel", &w.pin,
+	)
+	w.pin.SetText(newPIN())
 	w.wizard.ShowAll()
 
 	cur := w.wizard.GetCurrentPage()
@@ -157,17 +165,6 @@ func showSMPWizard() {
 		log.Printf("Error encountered when getting current page: %v", err)
 	}
 	w.wizard.SetPageComplete(page, true)
-
-	provider, err := g.gtk.CssProviderNew()
-	if err != nil {
-		return
-	}
-	provider.LoadFromData("GtkLabel#share {font-size: large;}")
-	screen, err := g.gdk.ScreenGetDefault()
-	if err != nil {
-		return
-	}
-	g.gtk.AddProviderForScreen(screen, provider, uint(gtki.STYLE_PROVIDER_PRIORITY_USER))
 
 	w.builder.ConnectSignals(map[string]interface{}{
 		"on_close_signal": func() {
@@ -180,4 +177,16 @@ func showSMPWizard() {
 			w.wizard.Destroy()
 		},
 	})
+}
+
+func newPIN() string {
+	var b bytes.Buffer
+	for i := 0; i < 6; i++ {
+		val, err := rand.Int(rand.Reader, big.NewInt(int64(10)))
+		if err != nil {
+			log.Printf("Error encountered when creating new PIN digit #%d: %v", i, err)
+		}
+		b.WriteString(val.String())
+	}
+	return b.String()
 }
