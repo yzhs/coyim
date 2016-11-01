@@ -92,7 +92,7 @@ func (acd *addContactDialog) initAccounts(accounts []*account) {
 }
 
 func (acd *addContactDialog) init() {
-	acd.builder = newBuilder("AddContact2")
+	acd.builder = newBuilder("AddContact")
 	acd.builder.getItems(
 		"AddContact", &acd.dialog,
 		"accounts-model", &acd.model,
@@ -109,31 +109,10 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 	acd := &addContactDialog{}
 	acd.init()
 	acd.initAccounts(accounts)
-	acd.dialog.ShowAll()
-	cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
-	page, err := acd.dialog.(gtki.Assistant).GetNthPage(cur)
-	if err != nil {
-		log.Printf("Error encountered when getting current page: %v", err)
-	}
-	acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
 
 	acd.builder.ConnectSignals(map[string]interface{}{
 		"on_cancel_signal": func() {
 			acd.dialog.Destroy()
-		},
-		"on_escape_signal": func() {
-			acd.dialog.Destroy()
-		},
-		"on_prepare_signal": func() {
-			cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
-			page, err := acd.dialog.(gtki.Assistant).GetNthPage(cur)
-			if err != nil {
-				log.Printf("Error encountered when getting current page: %v", err)
-			}
-			acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
-		},
-		"on_apply_signal": func() {
-			acd.dialog.(gtki.Assistant).NextPage()
 		},
 		"on_save_signal": func() {
 			contact, ok := acd.getVerifiedContact()
@@ -154,8 +133,51 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 			}
 
 			acd.dialog.Destroy()
+			showSMPWizard()
 		},
 	})
 
 	return acd.dialog
+}
+
+type smpWizard struct {
+	builder *builder
+	wizard  gtki.Assistant
+}
+
+func showSMPWizard() {
+	w := &smpWizard{}
+	w.builder = newBuilder("AddContact2")
+	w.builder.getItems("AddContact", &w.wizard)
+	w.wizard.ShowAll()
+
+	cur := w.wizard.GetCurrentPage()
+	page, err := w.wizard.GetNthPage(cur)
+	if err != nil {
+		log.Printf("Error encountered when getting current page: %v", err)
+	}
+	w.wizard.SetPageComplete(page, true)
+
+	provider, err := g.gtk.CssProviderNew()
+	if err != nil {
+		return
+	}
+	provider.LoadFromData("GtkLabel#share {font-size: large;}")
+	screen, err := g.gdk.ScreenGetDefault()
+	if err != nil {
+		return
+	}
+	g.gtk.AddProviderForScreen(screen, provider, uint(gtki.STYLE_PROVIDER_PRIORITY_USER))
+
+	w.builder.ConnectSignals(map[string]interface{}{
+		"on_close_signal": func() {
+			w.wizard.Destroy()
+		},
+		"on_cancel_signal": func() {
+			w.wizard.Destroy()
+		},
+		"on_escape_signal": func() {
+			w.wizard.Destroy()
+		},
+	})
 }
