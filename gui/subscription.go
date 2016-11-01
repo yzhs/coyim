@@ -111,7 +111,10 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 	acd.initAccounts(accounts)
 	acd.dialog.ShowAll()
 	cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
-	page, _ := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+	page, err := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+	if err != nil {
+		log.Printf("Error encountered when getting current page: %v", err)
+	}
 	acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
 
 	acd.builder.ConnectSignals(map[string]interface{}{
@@ -123,7 +126,10 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 		},
 		"on_prepare_signal": func() {
 			cur := acd.dialog.(gtki.Assistant).GetCurrentPage()
-			page, _ := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+			page, err := acd.dialog.(gtki.Assistant).GetNthPage(cur)
+			if err != nil {
+				log.Printf("Error encountered when getting current page: %v", err)
+			}
 			acd.dialog.(gtki.Assistant).SetPageComplete(page, true)
 		},
 		"on_apply_signal": func() {
