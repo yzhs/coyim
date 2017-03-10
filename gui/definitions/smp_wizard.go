@@ -7,7 +7,8 @@ func init() {
 type defSMPWizard struct{}
 
 func (*defSMPWizard) String() string {
-	return `<interface>
+	return `
+<interface>
    <object class="GtkAssistant" id="SMPWizard">
     <signal name="close" handler="on_close_signal" />
     <signal name="cancel" handler="on_cancel_signal" />
@@ -62,8 +63,17 @@ func (*defSMPWizard) String() string {
             <object class="GtkLabel" id="PinLabel">
                 <property name="visible">True</property>
                 <property name="selectable">True</property>
-                <property name="label">placeholder</property>
             </object>
+        </child>
+        <child>
+            <object class="GtkButton" id="GenPin">
+                <property name="label" translatable="yes">Generate New PIN</property>
+                <property name="receives-default">True</property>
+                <signal name="clicked" handler="on_gen_pin"/>
+            </object>
+            <packing>
+                <property name="padding">10</property>
+            </packing>
         </child>
         <child>
             <object class="GtkGrid">

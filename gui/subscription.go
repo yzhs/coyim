@@ -167,6 +167,9 @@ func showSMPWizard() {
 	w.wizard.SetPageComplete(page, true)
 
 	w.builder.ConnectSignals(map[string]interface{}{
+		"on_gen_pin": func() {
+			w.pin.SetText(newPIN())
+		},
 		"on_close_signal": func() {
 			w.wizard.Destroy()
 		},
