@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="17px" height="17px" viewBox="0 0 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 41.2 (35397) - http://www.bohemiancoding.com/sketch -->
+    <title>Page 1</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <polygon id="path-1" points="18.857 21.1196 18.857 0.0004 0 0.0004 0 10.56 0 21.1196"></polygon>
+    </defs>
+    <g id="SMP-flows" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Bob_4b" transform="translate(-584.000000, -253.000000)">
+            <g id="Group-27-Copy-2" transform="translate(560.000000, 200.000000)">
+                <g id="Page-1" transform="translate(23.000000, 50.000000)">
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="Clip-1"></g>
+                    <text id="" mask="url(#mask-2)" font-family="FontAwesome" font-size="24" font-weight="normal" fill="#F2565B">
+                        <tspan x="0" y="18.1196"></tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -13,9 +13,24 @@ func (*defSMPWizard) String() string {
     <signal name="cancel" handler="on_cancel_signal" />
     <signal name="escape" handler="on_escape_signal" />
     <child>
-        <object class="GtkLabel" id="label1">
-            <property name="visible">True</property>
-            <property name="label" translatable="yes">Make sure there is no one else reading your messages.</property>
+        <object class="GtkBox">
+            <property name="homogeneous">false</property>
+            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+            <property name="spacing">18</property>
+            <child>
+                <object class="GtkImage">
+                    <property name="file">build/images/maninthemiddle.png</property>
+                </object>
+                <packing>
+                    <property name="padding">60</property>
+                </packing>
+            </child>
+            <child>
+                <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Make sure there is no one else reading your messages.</property>
+                </object>
+            </child>
         </object>
         <packing>
             <property name="page_type">content</property>
@@ -26,6 +41,11 @@ func (*defSMPWizard) String() string {
         <property name="homogeneous">false</property>
         <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
         <property name="spacing">6</property>
+        <child>
+            <object class="GtkImage">
+                <property name="file">build/images/Pin_1.png</property>
+            </object>
+        </child>
         <child>
             <object class="GtkLabel">
                 <property name="visible">True</property>
@@ -47,6 +67,17 @@ func (*defSMPWizard) String() string {
         </child>
         <child>
             <object class="GtkGrid">
+            <property name="column-spacing">6</property>
+            <property name="row-spacing">2</property>
+            <child>
+                <object class="GtkImage">
+                    <property name="file">build/images/padlock.png</property>
+                </object>
+                <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">0</property>
+                </packing>
+            </child>
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
@@ -60,6 +91,15 @@ func (*defSMPWizard) String() string {
                 </packing>
             </child>
             <child>
+                <object class="GtkImage">
+                    <property name="file">build/images/padlock.png</property>
+                </object>
+                <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">1</property>
+                </packing>
+            </child>
+            <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="label" translatable="yes">Share through an encrypted channel</property>
@@ -69,6 +109,15 @@ func (*defSMPWizard) String() string {
                 <packing>
                     <property name="left-attach">1</property>
                     <property name="top-attach">1</property>
+                </packing>
+            </child>
+            <child>
+                <object class="GtkImage">
+                    <property name="file">build/images/alert.png</property>
+                </object>
+                <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">2</property>
                 </packing>
             </child>
             <child>
