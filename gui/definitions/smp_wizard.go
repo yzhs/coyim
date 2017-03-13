@@ -7,8 +7,7 @@ func init() {
 type defSMPWizard struct{}
 
 func (*defSMPWizard) String() string {
-	return `
-<interface>
+	return `<interface>
    <object class="GtkAssistant" id="SMPWizard">
     <signal name="close" handler="on_close_signal" />
     <signal name="cancel" handler="on_cancel_signal" />
