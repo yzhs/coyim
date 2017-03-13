@@ -156,7 +156,12 @@ func showSMPWizard() {
 		"SMPWizard", &w.wizard,
 		"PinLabel", &w.pin,
 	)
-	w.pin.SetText(newPIN())
+	pin, err := createPIN()
+	if err != nil {
+		log.Printf("Cannot recover. Quitting SMP Wizard.")
+		w.wizard.Destroy()
+	}
+	w.pin.SetText(pin)
 	w.wizard.ShowAll()
 
 	cur := w.wizard.GetCurrentPage()
@@ -168,7 +173,12 @@ func showSMPWizard() {
 
 	w.builder.ConnectSignals(map[string]interface{}{
 		"on_gen_pin": func() {
-			w.pin.SetText(newPIN())
+			pin, err := createPIN()
+			if err != nil {
+				log.Printf("Cannot recover. Quitting SMP Wizard.")
+				w.wizard.Destroy()
+			}
+			w.pin.SetText(pin)
 		},
 		"on_close_signal": func() {
 			w.wizard.Destroy()
@@ -182,14 +192,13 @@ func showSMPWizard() {
 	})
 }
 
-func newPIN() string {
+func createPIN() (string, error) {
 	var b bytes.Buffer
-	for i := 0; i < 6; i++ {
-		val, err := rand.Int(rand.Reader, big.NewInt(int64(10)))
-		if err != nil {
-			log.Printf("Error encountered when creating new PIN digit #%d: %v", i, err)
-		}
-		b.WriteString(val.String())
+	val, err := rand.Int(rand.Reader, big.NewInt(int64(1000000)))
+	if err != nil {
+		log.Printf("Error encountered when creating a new PIN: %v", err)
+		return "", err
 	}
-	return b.String()
+	b.WriteString(val.String())
+	return b.String(), nil
 }
