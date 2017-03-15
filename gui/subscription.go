@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"bytes"
 	"crypto/rand"
 	"fmt"
 	"log"
@@ -193,12 +192,10 @@ func showSMPWizard() {
 }
 
 func createPIN() (string, error) {
-	var b bytes.Buffer
 	val, err := rand.Int(rand.Reader, big.NewInt(int64(1000000)))
 	if err != nil {
 		log.Printf("Error encountered when creating a new PIN: %v", err)
 		return "", err
 	}
-	b.WriteString(val.String())
-	return b.String(), nil
+	return fmt.Sprintf("%06d", val), nil
 }
