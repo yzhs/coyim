@@ -201,7 +201,7 @@ func (*defAddContact) String() string {
               <object class="GtkButton" id="button_cancel">
                 <property name="label">_Cancel</property>
                 <property name="use-underline">True</property>
-                <signal name="clicked" handler="on_close_signal" />
+                <signal name="clicked" handler="on_cancel_signal" />
               </object>
             </child>
             <child>
