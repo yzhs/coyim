@@ -157,7 +157,7 @@ func showSMPWizard() {
 	)
 	pin, err := createPIN()
 	if err != nil {
-		log.Printf("Cannot recover. Quitting SMP Wizard.")
+		log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
 		w.wizard.Destroy()
 	}
 	w.pin.SetText(pin)
@@ -174,7 +174,7 @@ func showSMPWizard() {
 		"on_gen_pin": func() {
 			pin, err := createPIN()
 			if err != nil {
-				log.Printf("Cannot recover. Quitting SMP Wizard.")
+				log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
 				w.wizard.Destroy()
 			}
 			w.pin.SetText(pin)
