@@ -45,17 +45,17 @@ type conversationWindow struct {
 }
 
 type conversationPane struct {
-	to                 string
-	account            *account
-	widget             gtki.Box
-	menubar            gtki.MenuBar
-	entry              gtki.TextView
-	entryScroll        gtki.ScrolledWindow
-	history            gtki.TextView
-	scrollHistory      gtki.ScrolledWindow
-	notificationArea   gtki.Box
-	securityWarning    gtki.InfoBar
-	fingerprintWarning gtki.InfoBar
+	to                  string
+	account             *account
+	widget              gtki.Box
+	menubar             gtki.MenuBar
+	entry               gtki.TextView
+	entryScroll         gtki.ScrolledWindow
+	history             gtki.TextView
+	scrollHistory       gtki.ScrolledWindow
+	notificationArea    gtki.Box
+	securityWarning     gtki.InfoBar
+	verificationWarning gtki.InfoBar
 	// The window to set dialogs transient for
 	transientParent gtki.Window
 	sync.Mutex
@@ -477,8 +477,8 @@ func (conv *conversationPane) showIdentityVerificationWarning(u *gtkUI) {
 	conv.Lock()
 	defer conv.Unlock()
 
-	if conv.fingerprintWarning != nil {
-		log.Println("we are already showing a fingerprint warning, so not doing it again")
+	if conv.verificationWarning != nil {
+		log.Println("we are already showing a verification warning, so not doing it again")
 		return
 	}
 
@@ -487,18 +487,18 @@ func (conv *conversationPane) showIdentityVerificationWarning(u *gtkUI) {
 		return
 	}
 
-	conv.fingerprintWarning = buildVerifyIdentityNotification(conv.account, conv.to, conv.currentResource(), conv.transientParent)
-	conv.addNotification(conv.fingerprintWarning)
+	conv.verificationWarning = buildVerifyIdentityNotification(conv.account, conv.to, conv.currentResource(), conv.transientParent)
+	conv.addNotification(conv.verificationWarning)
 }
 
 func (conv *conversationPane) removeIdentityVerificationWarning() {
 	conv.Lock()
 	defer conv.Unlock()
 
-	if conv.fingerprintWarning != nil {
-		conv.fingerprintWarning.Hide()
-		conv.fingerprintWarning.Destroy()
-		conv.fingerprintWarning = nil
+	if conv.verificationWarning != nil {
+		conv.verificationWarning.Hide()
+		conv.verificationWarning.Destroy()
+		conv.verificationWarning = nil
 	}
 }
 

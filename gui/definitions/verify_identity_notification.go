@@ -13,7 +13,12 @@ func (*defVerifyIdentityNotification) String() string {
     <child internal-child="content_area">
       <object class="GtkBox" id="box">
         <property name="homogeneous">false</property>
-        <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+        <child>
+          <object class="GtkImage">
+            <property name="file">build/images/alert.png</property>
+            <property name="margin-start">10</property>
+          </object>
+        </child>
         <child>
           <object class="GtkLabel" id="message">
             <property name="wrap">true</property>
@@ -23,10 +28,9 @@ func (*defVerifyIdentityNotification) String() string {
     </child>
     <child internal-child="action_area">
       <object class="GtkBox" id="button_box">
-        <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
         <child>
           <object class="GtkButton" id="button_verify">
-            <property name="label" translatable="yes">Verify</property>
+            <property name="label" translatable="yes">Validate Secure Channel</property>
             <property name="can-default">true</property>
           </object>
         </child>
