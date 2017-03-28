@@ -34,7 +34,7 @@ func (u *gtkUI) notifyConnectionFailure(account *account, moreInfo func()) {
 	})
 }
 
-func buildVerifyIdentityNotification(acc *account, peer, resource string, win gtki.Window) gtki.InfoBar {
+func buildVerifyIdentityNotification(conv *conversationPane) gtki.InfoBar {
 	builder := newBuilder("VerifyIdentityNotification")
 
 	obj := builder.getObj("infobar")
@@ -51,13 +51,7 @@ func buildVerifyIdentityNotification(acc *account, peer, resource string, win gt
 	button := obj.(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			secureChannel(acc, peer, resource, win)
-			// Handle hiding or keeping the infobar here
-			//ok := verifyFingerprintDialog(acc, peer, resource, win)
-			//if ok != gtki.RESPONSE_YES {
-			//	infoBar.Hide()
-			//	infoBar.Destroy()
-			//}
+			secureChannel(conv, infoBar)
 		})
 	})
 
@@ -66,9 +60,18 @@ func buildVerifyIdentityNotification(acc *account, peer, resource string, win gt
 	return infoBar
 }
 
-func secureChannel(account *account, uid, resource string, parent gtki.Window) {
+func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
 	builder := newBuilder("ChooseVerificationType")
 	d := builder.getObj("dialog").(gtki.Dialog)
+	useSMP := true
+	builder.ConnectSignals(map[string]interface{}{
+		"use_smp": func() {
+			useSMP = true
+		},
+		"use_fingerprint": func() {
+			useSMP = false
+		},
+	})
 	cancelButton := builder.getObj("cancel_button").(gtki.Button)
 	cancelButton.Connect("clicked", func() {
 		d.Destroy()
@@ -76,32 +79,47 @@ func secureChannel(account *account, uid, resource string, parent gtki.Window) {
 	validateButton := builder.getObj("validate_button").(gtki.Button)
 	validateButton.Connect("clicked", func() {
 		doInUIThread(func() {
-			smpValidationDialog(parent)
-			d.Destroy()
+			if useSMP {
+				smpValidationDialog(conv)
+				d.Destroy()
+			} else {
+				ok := verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent)
+				if ok == gtki.RESPONSE_YES {
+					infoBar.Hide()
+					infoBar.Destroy()
+				}
+				d.Destroy()
+			}
 		})
 	})
-	d.SetTransientFor(parent)
+	d.SetTransientFor(conv.transientParent)
 	d.ShowAll()
 }
 
-func smpValidationDialog(parent gtki.Window) {
+func smpValidationDialog(conv *conversationPane) {
 	builder := newBuilder("ValidateSecureChannel")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	submit := builder.getObj("button_submit").(gtki.Button)
 	submit.Connect("clicked", func() {
 		doInUIThread(func() {
 			e := builder.getObj("pin").(gtki.Entry)
+			// TODO require PIN entry before proceeding
 			e.GetText()
+			//question := "Please provide the PIN we previously shared."
+			//conv.StartAuthenticate(conv.account.session, conv.currentResource(), question, []byte(pin))
+
 			// SUBMIT PIN TO SMP BACKEND HERE
 			// check if success or failure
 			// if success
 			//     showSecureChannelCreated(d)
 			// else
-			showPINWasIncorrect(parent)
+			//     showPINWasIncorrect(parent)
+
+			//showWaitingForSMPReply()
 			d.Destroy()
 		})
 	})
-	d.SetTransientFor(parent)
+	d.SetTransientFor(conv.transientParent)
 	d.ShowAll()
 }
 
@@ -118,7 +136,7 @@ func showPINWasIncorrect(parent gtki.Window) {
 	getOutButton.Connect("clicked", func() {
 		doInUIThread(func() {
 			d.Destroy()
-			parent.Destroy()
+			parent.Hide()
 		})
 	})
 	d.SetTransientFor(parent)

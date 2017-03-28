@@ -134,61 +134,68 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 				return
 			}
 
+			showChooseVerificationDialog()
 			acd.dialog.Destroy()
-			showSMPWizard()
 		},
 	})
 
 	return acd.dialog
 }
 
-type smpWizard struct {
-	builder *builder
-	wizard  gtki.Assistant
-	pin     gtki.Label
+func showChooseVerificationDialog() {
+	b := newBuilder("ChooseVerificationType")
+	d := b.getObj("dialog").(gtki.Dialog)
+	cancelButton := b.getObj("cancel_button").(gtki.Button)
+	cancelButton.Connect("clicked", func() {
+		d.Destroy()
+	})
+	useSMP := true
+	b.ConnectSignals(map[string]interface{}{
+		"use_smp": func() {
+			useSMP = true
+		},
+		"useSMP": func() {
+			useSMP = false
+		},
+	})
+	validateButton := b.getObj("validate_button").(gtki.Button)
+	validateButton.Connect("clicked", func() {
+		doInUIThread(func() {
+			showNewPinDialog(d)
+			d.Destroy()
+		})
+	})
+	d.ShowAll()
 }
 
-func showSMPWizard() {
-	w := &smpWizard{}
-	w.builder = newBuilder("SMPWizard")
-	w.builder.getItems(
-		"SMPWizard", &w.wizard,
-		"PinLabel", &w.pin,
+func showNewPinDialog(parent gtki.Window) {
+	sharePinBuilder := newBuilder("SMPWizard")
+	sharePinDialog := sharePinBuilder.getObj("dialog").(gtki.Dialog)
+	var pinLabel gtki.Label
+	sharePinBuilder.getItems(
+		"PinLabel", &pinLabel,
 	)
 	pin, err := createPIN()
 	if err != nil {
 		log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
-		w.wizard.Destroy()
+		sharePinDialog.Destroy()
 	}
-	w.pin.SetText(pin)
-	w.wizard.ShowAll()
-
-	cur := w.wizard.GetCurrentPage()
-	page, err := w.wizard.GetNthPage(cur)
-	if err != nil {
-		log.Printf("Error encountered when getting current page: %v", err)
-	}
-	w.wizard.SetPageComplete(page, true)
-
-	w.builder.ConnectSignals(map[string]interface{}{
+	sharePinBuilder.ConnectSignals(map[string]interface{}{
 		"on_gen_pin": func() {
 			pin, err := createPIN()
 			if err != nil {
 				log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
-				w.wizard.Destroy()
+				sharePinDialog.Destroy()
 			}
-			w.pin.SetText(pin)
+			pinLabel.SetText(pin)
 		},
-		"on_close_signal": func() {
-			w.wizard.Destroy()
-		},
-		"on_cancel_signal": func() {
-			w.wizard.Destroy()
-		},
-		"on_escape_signal": func() {
-			w.wizard.Destroy()
+		"close_share_pin": func() {
+			sharePinDialog.Destroy()
 		},
 	})
+	pinLabel.SetText(pin)
+	sharePinDialog.SetTransientFor(parent)
+	sharePinDialog.ShowAll()
 }
 
 func createPIN() (string, error) {

@@ -19,19 +19,30 @@
             <property name="label" translatable="yes">Make sure there is no one else reading your messages.</property>
           </object>
         </child>
+        <child>
+          <object class="GtkRadioButton" id="verification_type">
+            <property name="label" translatable="yes">Use a shared PIN</property>
+            <signal name="touch-event" handler="use_smp"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkRadioButton">
+            <property name="label" translatable="yes">Verify their fingerprint</property>
+            <property name="group">verification_type</property>
+            <signal name="touch-event" handler="use_fingerprint"/>
+          </object>
+        </child>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="button_box">
             <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
             <child>
               <object class="GtkButton" id="cancel_button">
                 <property name="label" translatable="yes">Cancel</property>
-                <signal name="clicked" handler="on_cancel_signal"/>
               </object>
             </child>
             <child>
               <object class="GtkButton" id="validate_button">
                 <property name="label" translatable="yes">Validate</property>
-                <signal name="clicked" handler="on_validate_signal"/>
               </object>
             </child>
           </object>

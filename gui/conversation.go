@@ -487,7 +487,8 @@ func (conv *conversationPane) showIdentityVerificationWarning(u *gtkUI) {
 		return
 	}
 
-	conv.verificationWarning = buildVerifyIdentityNotification(conv.account, conv.to, conv.currentResource(), conv.transientParent)
+	// should build verify identity notification be a conv method?
+	conv.verificationWarning = buildVerifyIdentityNotification(conv)
 	conv.addNotification(conv.verificationWarning)
 }
 
