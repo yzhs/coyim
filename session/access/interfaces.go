@@ -64,6 +64,7 @@ type Session interface {
 	SetWantToBeOnline(bool)
 	Subscribe(chan<- interface{})
 	Timeout(data.Cookie, time.Time)
+	StartSMP(string, string, string, string)
 }
 
 // Factory is a function that can create new Sessions

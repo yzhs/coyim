@@ -164,3 +164,6 @@ func (*SessionMock) Subscribe(chan<- interface{}) {}
 
 // Timeout is the implementation for Session interface
 func (*SessionMock) Timeout(data.Cookie, time.Time) {}
+
+// StartSMP is the implementation for Session interface
+func (*SessionMock) StartSMP(string, string, string, string) {}

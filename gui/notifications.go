@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"fmt"
+
 	"github.com/twstrike/coyim/i18n"
 	"github.com/twstrike/gotk3adapter/gtki"
 )
@@ -34,7 +36,7 @@ func (u *gtkUI) notifyConnectionFailure(account *account, moreInfo func()) {
 	})
 }
 
-func buildVerifyIdentityNotification(conv *conversationPane) gtki.InfoBar {
+func buildVerifyIdentityNotification(convPane *conversationPane) gtki.InfoBar {
 	builder := newBuilder("VerifyIdentityNotification")
 
 	obj := builder.getObj("infobar")
@@ -51,7 +53,7 @@ func buildVerifyIdentityNotification(conv *conversationPane) gtki.InfoBar {
 	button := obj.(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			secureChannel(conv, infoBar)
+			secureChannel(convPane, infoBar)
 		})
 	})
 
@@ -80,7 +82,7 @@ func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
 	validateButton.Connect("clicked", func() {
 		doInUIThread(func() {
 			if useSMP {
-				smpValidationDialog(conv)
+				smpValidationDialog(conv, infoBar)
 				d.Destroy()
 			} else {
 				ok := verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent)
@@ -96,17 +98,29 @@ func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
 	d.ShowAll()
 }
 
-func smpValidationDialog(conv *conversationPane) {
+func smpValidationDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 	builder := newBuilder("ValidateSecureChannel")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	submit := builder.getObj("button_submit").(gtki.Button)
 	submit.Connect("clicked", func() {
 		doInUIThread(func() {
+			infoBar.Hide()
 			e := builder.getObj("pin").(gtki.Entry)
 			// TODO require PIN entry before proceeding
-			e.GetText()
-			//question := "Please provide the PIN we previously shared."
-			//conv.StartAuthenticate(conv.account.session, conv.currentResource(), question, []byte(pin))
+			pin, _ := e.GetText()
+			builderWaitingSMP := newBuilder("WaitingSMPComplete")
+			waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
+			waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
+			peer, ok := conv.currentPeer()
+			if !ok {
+				// print that contact does not exist? this is impossible situation
+				return
+			}
+			waitingSMPMessage.SetText(i18n.Local(fmt.Sprintf("Waiting for %s to finish securing the channel...", peer.NameForPresentation())))
+			waitingInfoBar.ShowAll()
+			conv.addNotification(waitingInfoBar)
+			resource := conv.currentResource()
+			conv.account.session.StartSMP(peer.Jid, resource, "Please enter the PIN that we have previously shared.", pin)
 
 			// SUBMIT PIN TO SMP BACKEND HERE
 			// check if success or failure

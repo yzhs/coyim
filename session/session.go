@@ -1075,3 +1075,13 @@ func (s *session) SendPing() {
 		}
 	}()
 }
+
+// StartSMP begins the SMP interactions for a session
+func (s *session) StartSMP(peer, resource, question, answer string) {
+	conversation, ok := s.convManager.GetConversationWith(peer, resource)
+	if !ok {
+		// TODO manual test later
+	}
+	// TODO check error here
+	conversation.StartAuthenticate(s, resource, question, []byte(answer))
+}
