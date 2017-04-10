@@ -33,6 +33,7 @@ type account struct {
 	delayedConversationsLock sync.Mutex
 
 	askingForPassword bool
+	cachedPassword    string
 
 	sync.Mutex
 }
@@ -318,9 +319,9 @@ func (account *account) createSeparatorItem() gtki.MenuItem {
 func (account *account) createConnectionItem() gtki.MenuItem {
 	connInfoItem, _ := g.gtk.MenuItemNewWithMnemonic(i18n.Local("Connection _information..."))
 	connInfoItem.Connect("activate", account.connectionInfo)
-	connInfoItem.SetSensitive(!account.session.IsDisconnected())
+	connInfoItem.SetSensitive(account.session.IsConnected())
 	account.observeConnectionEvents(func() {
-		connInfoItem.SetSensitive(!account.session.IsDisconnected())
+		connInfoItem.SetSensitive(account.session.IsConnected())
 	})
 	return connInfoItem
 }

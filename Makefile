@@ -1,8 +1,9 @@
 GTK_VERSION=$(shell pkg-config --modversion gtk+-3.0 | tr . _ | cut -d '_' -f 1-2)
 GTK_BUILD_TAG="gtk_$(GTK_VERSION)"
 GIT_VERSION=$(shell git rev-parse HEAD)
-TAG_VERSION=$(shell git tag -l --contains $$GIT_VERSION)
+TAG_VERSION=$(shell git tag -l --contains $$GIT_VERSION | tail -1)
 GO_VERSION=$(shell go version | grep  -o 'go[[:digit:]]\.[[:digit:]]')
+KEYID=$(shell gpg2 --keyid-format 0xlong -K | grep '^sec' | head -1 | cut -d\  -f4 | cut -d\/ -f2)
 
 BUILD_DIR=bin
 
@@ -95,9 +96,32 @@ get:
 	go get -t -tags $(GTK_BUILD_TAG) $(go list ./... | grep -v /vendor/)
 
 deps-dev:
-	go get github.com/golang/lint/golint
-	go get github.com/modocache/gover
-	go get github.com/tools/godep
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/modocache/gover
+	go get -u github.com/tools/godep
 
 deps: deps-dev
-	godep restore
+
+reproducible-linux-create-image:
+	make -C ./reproducible/docker create-image
+
+reproducible-linux-build: reproducible-linux-create-image
+	make -C ./reproducible/docker build
+
+sign-reproducible:
+	./sign_build_info_with_key.sh $(KEYID)
+
+upload-reproducible-signature:
+	./push_build_info.sh bin/build_info.$(KEYID).asc $(TAG_VERSION) build_info.$(KEYID).asc
+
+send-reproducible-signature:
+	./mail_build_info.sh bin/build_info.$(KEYID).asc $(TAG_VERSION)
+
+check-reproducible-signatures:
+	./check_build_info_signatures.rb $(TAG_VERSION)
+
+gen-authors:
+	rm -rf gui/authors.go
+	./authors.rb > gui/authors.go
+	gofmt -w gui/authors.go
+

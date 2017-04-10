@@ -1,10 +1,13 @@
 package gui
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"html"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/twstrike/coyim/config"
@@ -205,28 +208,6 @@ func toArray(groupList gtki.ListStore) []string {
 	return groups
 }
 
-func (r *roster) addGroupDialog(groupList gtki.ListStore) {
-	builder := newBuilder("GroupDetails")
-	dialog := builder.getObj("dialog").(gtki.Dialog)
-
-	nameEntry := builder.getObj("group-name").(gtki.Entry)
-
-	defaultBtn := builder.getObj("btn-ok").(gtki.Button)
-	defaultBtn.GrabDefault()
-	dialog.SetTransientFor(r.ui.window)
-	dialog.ShowAll()
-
-	response := dialog.Run()
-	defer dialog.Destroy()
-
-	if gtki.ResponseType(response) != gtki.RESPONSE_OK {
-		return
-	}
-
-	groupName, _ := nameEntry.GetText()
-	groupList.SetValue(groupList.Append(), 0, groupName)
-}
-
 func (r *roster) createAccountPeerPopup(jid string, account *account, bt gdki.EventButton) {
 	builder := newBuilder("ContactPopupMenu")
 	mn := builder.getObj("contactMenu").(gtki.Menu)
@@ -249,16 +230,13 @@ func (r *roster) createAccountPeerPopup(jid string, account *account, bt gdki.Ev
 		"on_ask_contact_to_see_status": func() {
 			account.session.RequestPresenceSubscription(jid, "")
 		},
-		"on_peer_fingerprints": func() {
-			r.ui.showFingerprintsForPeer(jid, account)
-		},
 		"on_dump_info": func() {
 			r.debugPrintRosterFor(account.session.GetConfig().Account)
 		},
 	})
 
 	mn.ShowAll()
-	mn.PopupAtMouseCursor(nil, nil, int(bt.Button()), bt.Time())
+	mn.PopupAtPointer(bt)
 }
 
 func (r *roster) createAccountPopup(jid string, account *account, bt gdki.EventButton) {
@@ -269,7 +247,7 @@ func (r *roster) createAccountPopup(jid string, account *account, bt gdki.EventB
 		mn.Append(account.createXMLConsoleItem(r))
 	}
 	mn.ShowAll()
-	mn.PopupAtMouseCursor(nil, nil, int(bt.Button()), bt.Time())
+	mn.PopupAtPointer(bt)
 }
 
 func (r *roster) onButtonPress(view gtki.TreeView, ev gdki.Event) bool {
@@ -289,6 +267,30 @@ func (r *roster) onButtonPress(view gtki.TreeView, ev gdki.Event) bool {
 	return false
 }
 
+func collapseTransform(s string) string {
+	res := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(res[:])
+}
+
+func (r *roster) restoreCollapseStatus() {
+	pieces := strings.Split(r.ui.settings.GetCollapsed(), ":")
+	for _, p := range pieces {
+		if p != "" {
+			r.isCollapsed[p] = true
+		}
+	}
+}
+
+func (r *roster) saveCollapseStatus() {
+	var vals []string
+	for e, v := range r.isCollapsed {
+		if v {
+			vals = append(vals, e)
+		}
+	}
+	r.ui.settings.SetCollapsed(strings.Join(vals, ":"))
+}
+
 func (r *roster) onActivateBuddy(v gtki.TreeView, path gtki.TreePath) {
 	selection, _ := v.GetSelection()
 	defer selection.UnselectPath(path)
@@ -303,7 +305,9 @@ func (r *roster) onActivateBuddy(v gtki.TreeView, path gtki.TreePath) {
 	rowType := getFromModelIter(r.model, iter, indexRowType)
 
 	if rowType != "peer" {
-		r.isCollapsed[jid] = !r.isCollapsed[jid]
+		ix := collapseTransform(jid)
+		r.isCollapsed[ix] = !r.isCollapsed[ix]
+		r.saveCollapseStatus()
 		r.redraw()
 		return
 	}
@@ -385,7 +389,14 @@ func (r *roster) messageReceived(account *account, from, resource string, timest
 			return
 		}
 
-		conv.appendMessage(r.displayNameFor(account, from), timestamp, encrypted, ui.StripSomeHTML(message), false)
+		sent := sentMessage{
+			from:            r.displayNameFor(account, from),
+			timestamp:       timestamp,
+			isEncrypted:     encrypted,
+			isOutgoing:      false,
+			strippedMessage: ui.StripSomeHTML(message),
+		}
+		conv.appendMessage(sent)
 
 		if !conv.isVisible() && r.deNotify != nil {
 			r.maybeNotify(timestamp, account, from, string(ui.StripSomeHTML(message)))
@@ -416,12 +427,12 @@ func (r *roster) debugPrintRosterFor(nm string) {
 	fmt.Println()
 }
 
-func isNominallyVisible(p *rosters.Peer) bool {
-	return (p.Subscription != "none" && p.Subscription != "") || p.PendingSubscribeID != "" || p.Asked
+func isNominallyVisible(p *rosters.Peer, showWaiting bool) bool {
+	return (p.Subscription != "none" && p.Subscription != "") || (showWaiting && (p.PendingSubscribeID != "" || p.Asked))
 }
 
-func shouldDisplay(p *rosters.Peer, showOffline bool) bool {
-	return isNominallyVisible(p) && (showOffline || p.Online || p.Asked)
+func shouldDisplay(p *rosters.Peer, showOffline, showWaiting bool) bool {
+	return isNominallyVisible(p, showWaiting) && (showOffline || p.Online || p.Asked)
 }
 
 func isAway(p *rosters.Peer) bool {
@@ -504,6 +515,7 @@ func (r *roster) addItem(item *rosters.Peer, parentIter gtki.TreeIter, indent st
 
 func (r *roster) redrawMerged() {
 	showOffline := !r.ui.config.Display.ShowOnlyOnline
+	showWaiting := !r.ui.config.Display.ShowOnlyConfirmed
 
 	r.ui.accountManager.RLock()
 	defer r.ui.accountManager.RUnlock()
@@ -516,7 +528,7 @@ func (r *roster) redrawMerged() {
 	}
 
 	accountCounter := &counter{}
-	r.displayGroup(grp, nil, accountCounter, showOffline, "")
+	r.displayGroup(grp, nil, accountCounter, showOffline, showWaiting, "")
 
 	r.view.ExpandAll()
 	for _, path := range r.toCollapse {
@@ -538,14 +550,57 @@ func (c *counter) inc(total, online bool) {
 	}
 }
 
-func (r *roster) displayGroup(g *rosters.Group, parentIter gtki.TreeIter, accountCounter *counter, showOffline bool, accountName string) {
+func (r *roster) sortedPeers(ps []*rosters.Peer) []*rosters.Peer {
+	if r.ui.config.Display.SortByStatus {
+		sort.Sort(byStatus(ps))
+	} else {
+		sort.Sort(byNameForPresentation(ps))
+	}
+	return ps
+}
+
+type byNameForPresentation []*rosters.Peer
+
+func (s byNameForPresentation) Len() int { return len(s) }
+func (s byNameForPresentation) Less(i, j int) bool {
+	return s[i].NameForPresentation() < s[j].NameForPresentation()
+}
+func (s byNameForPresentation) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func statusValueFor(s string) int {
+	switch s {
+	case "available":
+		return 0
+	case "away":
+		return 1
+	case "extended-away":
+		return 2
+	case "busy":
+		return 3
+	case "offline":
+		return 4
+	case "unknown":
+		return 5
+	}
+	return -1
+}
+
+type byStatus []*rosters.Peer
+
+func (s byStatus) Len() int { return len(s) }
+func (s byStatus) Less(i, j int) bool {
+	return statusValueFor(decideStatusFor(s[i])) < statusValueFor(decideStatusFor(s[j]))
+}
+func (s byStatus) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (r *roster) displayGroup(g *rosters.Group, parentIter gtki.TreeIter, accountCounter *counter, showOffline, showWaiting bool, accountName string) {
 	pi := parentIter
 	groupCounter := &counter{}
 	groupID := accountName + "//" + g.FullGroupName()
 
 	isEmpty := true
-	for _, item := range g.Peers() {
-		if shouldDisplay(item, showOffline) {
+	for _, item := range g.UnsortedPeers() {
+		if shouldDisplay(item, showOffline, showWaiting) {
 			isEmpty = false
 		}
 	}
@@ -558,24 +613,24 @@ func (r *roster) displayGroup(g *rosters.Group, parentIter gtki.TreeIter, accoun
 		r.model.SetValue(pi, indexBackgroundColor, r.ui.currentColorSet().rosterGroupBackground)
 	}
 
-	for _, item := range g.Peers() {
-		vs := isNominallyVisible(item)
+	for _, item := range r.sortedPeers(g.UnsortedPeers()) {
+		vs := isNominallyVisible(item, showWaiting)
 		o := isOnline(item)
 		accountCounter.inc(vs, vs && o)
 		groupCounter.inc(vs, vs && o)
 
-		if shouldDisplay(item, showOffline) {
+		if shouldDisplay(item, showOffline, showWaiting) {
 			r.addItem(item, pi, "")
 		}
 	}
 
 	for _, gr := range g.Groups() {
-		r.displayGroup(gr, pi, accountCounter, showOffline, accountName)
+		r.displayGroup(gr, pi, accountCounter, showOffline, showWaiting, accountName)
 	}
 
-	if g.GroupName != "" {
+	if g.GroupName != "" && (!isEmpty || r.showEmptyGroups()) {
 		parentPath, _ := r.model.GetPath(pi)
-		shouldCollapse, ok := r.isCollapsed[groupID]
+		shouldCollapse, ok := r.isCollapsed[collapseTransform(groupID)]
 		isExpanded := true
 		if ok && shouldCollapse {
 			isExpanded = false
@@ -586,7 +641,7 @@ func (r *roster) displayGroup(g *rosters.Group, parentIter gtki.TreeIter, accoun
 	}
 }
 
-func (r *roster) redrawSeparateAccount(account *account, contacts *rosters.List, showOffline bool) {
+func (r *roster) redrawSeparateAccount(account *account, contacts *rosters.List, showOffline, showWaiting bool) {
 	cs := r.ui.currentColorSet()
 	parentIter := r.model.Append(nil)
 
@@ -594,7 +649,7 @@ func (r *roster) redrawSeparateAccount(account *account, contacts *rosters.List,
 
 	grp := contacts.Grouped(account.session.GroupDelimiter())
 	parentName := account.session.GetConfig().Account
-	r.displayGroup(grp, parentIter, accountCounter, showOffline, parentName)
+	r.displayGroup(grp, parentIter, accountCounter, showOffline, showWaiting, parentName)
 
 	r.model.SetValue(parentIter, indexParentJid, parentName)
 	r.model.SetValue(parentIter, indexAccountID, account.session.GetConfig().ID())
@@ -608,7 +663,7 @@ func (r *roster) redrawSeparateAccount(account *account, contacts *rosters.List,
 	r.model.SetValue(parentIter, indexBackgroundColor, bgcolor)
 
 	parentPath, _ := r.model.GetPath(parentIter)
-	shouldCollapse, ok := r.isCollapsed[parentName]
+	shouldCollapse, ok := r.isCollapsed[collapseTransform(parentName)]
 	isExpanded := true
 	if ok && shouldCollapse {
 		isExpanded = false
@@ -646,6 +701,7 @@ func (r *roster) showEmptyGroups() bool {
 
 func (r *roster) redrawSeparate() {
 	showOffline := !r.ui.config.Display.ShowOnlyOnline
+	showWaiting := !r.ui.config.Display.ShowOnlyConfirmed
 
 	r.ui.accountManager.RLock()
 	defer r.ui.accountManager.RUnlock()
@@ -653,7 +709,7 @@ func (r *roster) redrawSeparate() {
 	r.toCollapse = nil
 
 	for _, account := range r.sortedAccounts() {
-		r.redrawSeparateAccount(account, r.ui.accountManager.getContacts(account), showOffline)
+		r.redrawSeparateAccount(account, r.ui.accountManager.getContacts(account), showOffline, showWaiting)
 	}
 
 	r.view.ExpandAll()

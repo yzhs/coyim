@@ -68,9 +68,19 @@ release-dmg: clean-mac-bundle mac-bundle
 ../bin/coyim:
 	make -C ../ build-gui
 
+build-linux:
+	make -C ../ reproducible-linux-build
+
 release-gui: ../bin/coyim
 	mkdir -p ../release
 	cp ../bin/coyim ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH)
+	openssl dgst -sha256 ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH) >> ../release/checksum
+
+release-gui-linux: build-linux
+	mkdir -p ../release
+	cp ../bin/coyim ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH)
+	cp ../bin/coyim-cli ../release/coyim-cli_$(shell go env GOOS)_$(shell go env GOARCH)
+	cp ../bin/build_info ../release/build_info_$(shell go env GOOS)_$(shell go env GOARCH)
 	openssl dgst -sha256 ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH) >> ../release/checksum
 
 ../bin/coyim.exe:
@@ -78,6 +88,6 @@ release-gui: ../bin/coyim
 
 release-gui-win: ../bin/coyim.exe
 	mkdir -p ../release
-	cp ../vendor/toast.exe ../release/toast.exe
+	cp ../build/toast.exe ../release/toast.exe
 	cp ../bin/coyim.exe ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH).exe
 	openssl dgst -sha256 ../release/coyim_$(shell go env GOOS)_$(shell go env GOARCH).exe >> ../release/checksum

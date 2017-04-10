@@ -19,6 +19,7 @@ import (
 	"github.com/twstrike/coyim/session/access"
 	"github.com/twstrike/coyim/session/events"
 	"github.com/twstrike/coyim/tls"
+	"github.com/twstrike/coyim/ui"
 	"github.com/twstrike/coyim/xmpp/data"
 	xi "github.com/twstrike/coyim/xmpp/interfaces"
 	"github.com/twstrike/coyim/xmpp/utils"
@@ -111,7 +112,7 @@ func parseFromConfig(cu *config.Account) []otr3.PrivateKey {
 	return result
 }
 
-func createXmppLogger(rawLog string) (*bytes.Buffer, io.Writer) {
+func createXMPPLogger(rawLog string) (*bytes.Buffer, io.Writer) {
 	log := openLogFile(rawLog)
 
 	var inMemory *bytes.Buffer
@@ -132,7 +133,7 @@ func createXmppLogger(rawLog string) (*bytes.Buffer, io.Writer) {
 func Factory(c *config.ApplicationConfig, cu *config.Account, df func(tls.Verifier) xi.Dialer) access.Session {
 	// Make xmppLogger go to in memory STRING and/or the log file
 
-	inMemoryLog, xmppLogger := createXmppLogger(c.RawLogFile)
+	inMemoryLog, xmppLogger := createXMPPLogger(c.RawLogFile)
 
 	s := &session{
 		config:        c,
@@ -670,6 +671,7 @@ func (s *session) receiveClientMessage(from, resource string, when time.Time, bo
 		fpr := conversation.TheirFingerprint()
 		s.cmdManager.ExecuteCmd(client.AuthorizeFingerprintCmd{
 			Account:     s.GetConfig(),
+			Session:     s,
 			Peer:        from,
 			Fingerprint: fpr,
 		})
@@ -679,6 +681,10 @@ func (s *session) receiveClientMessage(from, resource string, when time.Time, bo
 
 	if len(out) == 0 {
 		return
+	}
+
+	if encrypted {
+		out = ui.UnescapeNewlineTags(out)
 	}
 
 	s.messageReceived(from, resource, when, encrypted, out)

@@ -104,6 +104,7 @@ func NewGTK(version string, sf sessions.Factory, df interfaces.DialerFactory, gx
 	//*.mo files should be in ./i18n/locale_code.utf8/LC_MESSAGES/
 	g.glib.InitI18n(localizationDomain, "./i18n")
 	g.gtk.Init(argsWithApplicationName())
+	ensureInstalled()
 
 	ret := &gtkUI{
 		commands: make(chan interface{}, 5),
@@ -156,7 +157,7 @@ func (u *gtkUI) initialSetupWindow() {
 			go u.showFirstAccountWindow()
 		}
 		if res {
-			u.captureInitialMasterPassword(k)
+			u.captureInitialMasterPassword(k, func() {})
 		} else {
 			k()
 		}
@@ -204,6 +205,7 @@ func (u *gtkUI) updateUnifiedOrNot() {
 
 func (u *gtkUI) configLoaded(c *config.ApplicationConfig) {
 	u.settings = settings.For(c.GetUniqueID())
+	u.roster.restoreCollapseStatus()
 	u.roster.deNotify.updateWith(u.settings)
 	u.updateUnifiedOrNot()
 
@@ -307,10 +309,13 @@ func (u *gtkUI) mainWindow() {
 	builder.ConnectSignals(map[string]interface{}{
 		"on_close_window_signal":                       u.quit,
 		"on_add_contact_window_signal":                 u.addContactWindow,
+		"on_new_conversation_signal":                   u.newCustomConversation,
 		"on_about_dialog_signal":                       u.aboutDialog,
 		"on_feedback_dialog_signal":                    u.feedbackDialog,
 		"on_toggled_check_Item_Merge_signal":           u.toggleMergeAccounts,
 		"on_toggled_check_Item_Show_Offline_signal":    u.toggleShowOffline,
+		"on_toggled_check_Item_Show_Waiting_signal":    u.toggleShowWaiting,
+		"on_toggled_check_Item_Sort_By_Status_signal":  u.toggleSortByStatus,
 		"on_toggled_encrypt_configuration_file_signal": u.toggleEncryptedConfig,
 		"on_preferences_signal":                        u.showGlobalPreferences,
 	})
@@ -337,6 +342,12 @@ func (u *gtkUI) mainWindow() {
 
 	u.viewMenu.offline = builder.getObj("CheckItemShowOffline").(gtki.CheckMenuItem)
 	u.displaySettings.defaultSettingsOn(u.viewMenu.offline)
+
+	u.viewMenu.waiting = builder.getObj("CheckItemShowWaiting").(gtki.CheckMenuItem)
+	u.displaySettings.defaultSettingsOn(u.viewMenu.waiting)
+
+	u.viewMenu.sortStatus = builder.getObj("CheckItemSortStatus").(gtki.CheckMenuItem)
+	u.displaySettings.defaultSettingsOn(u.viewMenu.sortStatus)
 
 	// OptionsMenu
 	u.optionsMenu = new(optionsMenu)
@@ -470,20 +481,6 @@ func (u *gtkUI) shouldViewAccounts() bool {
 	return !u.config.Display.MergeAccounts
 }
 
-func authors() []string {
-	return []string{
-		"Fan Jiang  -  fan.torchz@gmail.com",
-		"Iván Pazmiño  -  iapazmino@gmail.com",
-		"Ola Bini  -  ola@olabini.se",
-		"Reinaldo de Souza Jr  -  juniorz@gmail.com",
-		"Tania Silva  -  tsilva@thoughtworks.com",
-		"Adam Langley",
-		"Gray Leonard - gl7039a@american.edu",
-		"Bruce Leidl - bruce@subgraph.com",
-		"xSmurf - matth@subgraph.com",
-	}
-}
-
 func (u *gtkUI) aboutDialog() {
 	dialog, _ := g.gtk.AboutDialogNew()
 	dialog.SetName(i18n.Local("Coy IM!"))
@@ -496,6 +493,71 @@ func (u *gtkUI) aboutDialog() {
 	dialog.SetTransientFor(u.window)
 	dialog.Run()
 	dialog.Destroy()
+}
+
+func (u *gtkUI) newCustomConversation() {
+	accounts := make([]*account, 0, len(u.accounts))
+
+	for i := range u.accounts {
+		acc := u.accounts[i]
+		if acc.connected() {
+			accounts = append(accounts, acc)
+		}
+	}
+
+	var dialog gtki.Window
+	var model gtki.ListStore
+	var accountInput gtki.ComboBox
+	var peerInput gtki.Entry
+
+	builder := newBuilder("NewCustomConversation")
+	builder.getItems(
+		"NewCustomConversation", &dialog,
+		"accounts-model", &model,
+		"accounts", &accountInput,
+		"address", &peerInput,
+	)
+
+	for _, acc := range accounts {
+		iter := model.Append()
+		model.SetValue(iter, 0, acc.session.GetConfig().Account)
+		model.SetValue(iter, 1, acc.session.GetConfig().ID())
+	}
+
+	if len(accounts) > 0 {
+		accountInput.SetActive(0)
+	}
+
+	builder.ConnectSignals(map[string]interface{}{
+		"on_close_signal": func() {
+			dialog.Destroy()
+		},
+		"on_start_signal": func() {
+			iter, err := accountInput.GetActiveIter()
+			if err != nil {
+				log.Printf("Error encountered when getting account: %v", err)
+				return
+			}
+			val, err := model.GetValue(iter, 1)
+			if err != nil {
+				log.Printf("Error encountered when getting account: %v", err)
+				return
+			}
+			accountID, _ := val.GetString()
+
+			account, ok := u.roster.getAccount(accountID)
+			if !ok {
+				return
+			}
+			jid, _ := peerInput.GetText()
+			u.roster.openConversationView(account, jid, true)
+
+			dialog.Destroy()
+		},
+	})
+
+	dialog.SetTransientFor(u.window)
+	dialog.ShowAll()
 }
 
 func (u *gtkUI) addContactWindow() {

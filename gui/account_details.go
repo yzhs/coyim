@@ -189,6 +189,10 @@ func (u *gtkUI) accountDialog(s access.Session, account *config.Account, saveFun
 		}
 	}
 
+	if account.Password != "" {
+		data.pass.SetProperty("placeholder-text", "(saved in configuration file)")
+	}
+
 	data.server.SetText(account.Server)
 	if account.Port == 0 {
 		account.Port = 5222
@@ -210,10 +214,12 @@ func (u *gtkUI) accountDialog(s access.Session, account *config.Account, saveFun
 
 	data.pinningPolicy.SetActive(findPinningPolicyFor(account.PinningPolicy))
 
-	data.fingerprintsMessage.SetSelectable(true)
-	m := i18n.Local("Your fingerprints for %s:\n%s")
-	message := fmt.Sprintf(m, account.Account, formattedFingerprintsFor(s))
-	data.fingerprintsMessage.SetText(message)
+	if s != nil && s.PrivateKeys() != nil && len(s.PrivateKeys()) > 0 {
+		data.fingerprintsMessage.SetSelectable(true)
+		m := i18n.Local("Your fingerprints for %s:\n%s")
+		message := fmt.Sprintf(m, account.Account, formattedFingerprintsFor(s))
+		data.fingerprintsMessage.SetText(message)
+	}
 
 	p2, _ := data.notebook.GetNthPage(1)
 	p3, _ := data.notebook.GetNthPage(2)
@@ -253,7 +259,7 @@ func (u *gtkUI) accountDialog(s access.Session, account *config.Account, saveFun
 			servTxt, _ := data.server.GetText()
 			portTxt, _ := data.port.GetText()
 
-			isJid, err := verifyXmppAddress(accTxt)
+			isJid, err := verifyXMPPAddress(accTxt)
 			if !isJid && failures > 0 {
 				failures++
 				return

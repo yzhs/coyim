@@ -28,6 +28,41 @@ func init() {
 	tagsToAvoid["img"] = true
 }
 
+// UnescapeNewlineTags will remove all newline tags and replace them with actual newlines
+func UnescapeNewlineTags(msg []byte) (out []byte) {
+	z := html.NewTokenizer(bytes.NewReader(msg))
+
+loop:
+	for {
+		tt := z.Next()
+		switch tt {
+		case html.TextToken:
+			out = append(out, z.Text()...)
+		case html.ErrorToken:
+			if err := z.Err(); err != nil && err != io.EOF {
+				out = msg
+				return
+			}
+			break loop
+		case html.StartTagToken, html.EndTagToken, html.SelfClosingTagToken:
+			raw := z.Raw()
+			name, _ := z.TagName()
+
+			if string(name) == "br" {
+				out = append(out, byte('\n'))
+			} else {
+				out = append(out, raw...)
+			}
+		case html.CommentToken:
+			out = append(out, z.Raw()...)
+		case html.DoctypeToken:
+			out = append(out, z.Raw()...)
+		}
+	}
+
+	return
+}
+
 // StripSomeHTML removes the most common html presentation tags from the text
 func StripSomeHTML(msg []byte) (out []byte) {
 	z := html.NewTokenizer(bytes.NewReader(msg))
@@ -83,6 +118,7 @@ loop:
 	return
 }
 
+// EscapeAllHTMLTags will escape all html tags in the text
 func EscapeAllHTMLTags(in string) string {
 	in = strings.Replace(in, "<", "&lt;", -1)
 	in = strings.Replace(in, ">", "&gt;", -1)

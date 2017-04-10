@@ -40,6 +40,13 @@ func (*defMain) String() string {
                             <signal name="activate" handler="on_add_contact_window_signal" swapped="no"/>
                           </object>
                         </child>
+                        <child>
+                          <object class="GtkMenuItem" id="newConvMenu">
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">New Conversation...</property>
+                            <signal name="activate" handler="on_new_conversation_signal" swapped="no"/>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -71,6 +78,20 @@ func (*defMain) String() string {
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">Show Offline Contacts</property>
                             <signal name="toggled" handler="on_toggled_check_Item_Show_Offline_signal" swapped="no"/>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckMenuItem" id="CheckItemShowWaiting">
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Show Waiting Contacts</property>
+                            <signal name="toggled" handler="on_toggled_check_Item_Show_Waiting_signal" swapped="no"/>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckMenuItem" id="CheckItemSortStatus">
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Sort By Status</property>
+                            <signal name="toggled" handler="on_toggled_check_Item_Sort_By_Status_signal" swapped="no"/>
                           </object>
                         </child>
                       </object>
