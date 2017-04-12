@@ -1,0 +1,27 @@
+package definitions
+
+func init() {
+	add(`WaitingSMPComplete`, &defWaitingSMPComplete{})
+}
+
+type defWaitingSMPComplete struct{}
+
+func (*defWaitingSMPComplete) String() string {
+	return `<interface>
+  <object class="GtkInfoBar" id="smp_waiting_infobar">
+    <property name="message-type">GTK_MESSAGE_WARNING</property>
+    <child internal-child="content_area">
+      <object class="GtkBox" id="box">
+        <property name="homogeneous">false</property>
+        <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+        <child>
+          <object class="GtkLabel" id="message">
+            <property name="wrap">true</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
+`
+}

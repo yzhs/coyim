@@ -1,4 +1,13 @@
-<interface>
+package definitions
+
+func init() {
+	add(`StartVerification`, &defStartVerification{})
+}
+
+type defStartVerification struct{}
+
+func (*defStartVerification) String() string {
+	return `<interface>
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>
     <child internal-child="vbox">
@@ -17,19 +26,6 @@
         <child>
           <object class="GtkLabel">
             <property name="label" translatable="yes">Make sure there is no one else reading your messages.</property>
-          </object>
-        </child>
-        <child>
-          <object class="GtkRadioButton" id="verification_type">
-            <property name="label" translatable="yes">Use a shared PIN</property>
-            <signal name="touch-event" handler="use_smp"/>
-          </object>
-        </child>
-        <child>
-          <object class="GtkRadioButton">
-            <property name="label" translatable="yes">Verify their fingerprint</property>
-            <property name="group">verification_type</property>
-            <signal name="touch-event" handler="use_fingerprint"/>
           </object>
         </child>
         <child internal-child="action_area">
@@ -51,3 +47,5 @@
     </child>
   </object>
 </interface>
+`
+}

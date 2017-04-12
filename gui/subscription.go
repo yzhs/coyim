@@ -143,7 +143,7 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 }
 
 func showChooseVerificationDialog() {
-	b := newBuilder("ChooseVerificationType")
+	b := newBuilder("StartVerification")
 	d := b.getObj("dialog").(gtki.Dialog)
 	cancelButton := b.getObj("cancel_button").(gtki.Button)
 	cancelButton.Connect("clicked", func() {

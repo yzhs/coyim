@@ -63,17 +63,8 @@ func buildVerifyIdentityNotification(convPane *conversationPane) gtki.InfoBar {
 }
 
 func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
-	builder := newBuilder("ChooseVerificationType")
+	builder := newBuilder("StartVerification")
 	d := builder.getObj("dialog").(gtki.Dialog)
-	useSMP := true
-	builder.ConnectSignals(map[string]interface{}{
-		"use_smp": func() {
-			useSMP = true
-		},
-		"use_fingerprint": func() {
-			useSMP = false
-		},
-	})
 	cancelButton := builder.getObj("cancel_button").(gtki.Button)
 	cancelButton.Connect("clicked", func() {
 		d.Destroy()
@@ -81,17 +72,8 @@ func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
 	validateButton := builder.getObj("validate_button").(gtki.Button)
 	validateButton.Connect("clicked", func() {
 		doInUIThread(func() {
-			if useSMP {
-				smpValidationDialog(conv, infoBar)
-				d.Destroy()
-			} else {
-				ok := verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent)
-				if ok == gtki.RESPONSE_YES {
-					infoBar.Hide()
-					infoBar.Destroy()
-				}
-				d.Destroy()
-			}
+			smpValidationDialog(conv, infoBar)
+			d.Destroy()
 		})
 	})
 	d.SetTransientFor(conv.transientParent)
@@ -107,7 +89,15 @@ func smpValidationDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 			infoBar.Hide()
 			e := builder.getObj("pin").(gtki.Entry)
 			// TODO require PIN entry before proceeding
-			pin, _ := e.GetText()
+			_, err := e.GetText()
+			if err != nil {
+				notificationBuilder := newBuilder("BadPINNotification")
+				notification := notificationBuilder.getObj("infobar").(gtki.InfoBar)
+				msg := notificationBuilder.getObj("message").(gtki.Label)
+				msg.SetText("A PIN is required")
+				area := builder.getObj("notification-area").(gtki.Box)
+				area.Add(notification)
+			}
 			builderWaitingSMP := newBuilder("WaitingSMPComplete")
 			waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
 			waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
@@ -118,9 +108,9 @@ func smpValidationDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 			}
 			waitingSMPMessage.SetText(i18n.Local(fmt.Sprintf("Waiting for %s to finish securing the channel...", peer.NameForPresentation())))
 			waitingInfoBar.ShowAll()
-			conv.addNotification(waitingInfoBar)
-			resource := conv.currentResource()
-			conv.account.session.StartSMP(peer.Jid, resource, "Please enter the PIN that we have previously shared.", pin)
+			//conv.addNotification(waitingInfoBar)
+			//resource := conv.currentResource()
+			//conv.account.session.StartSMP(peer.Jid, resource, "Please enter the PIN that your peer shared with you.", pin)
 
 			// SUBMIT PIN TO SMP BACKEND HERE
 			// check if success or failure

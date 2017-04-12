@@ -128,7 +128,7 @@ func (*defSMPWizard) String() string {
               <child>
                 <object class="GtkButton" id="button_finished">
                   <property name="can-default">true</property>
-                  <property name="label" translatable="yes">Finished</property>
+                  <property name="label" translatable="yes">Finish</property>
                   <signal name="clicked" handler="close_share_pin"/>
                 </object>
               </child>

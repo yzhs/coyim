@@ -16,6 +16,16 @@ func (*defValidateSecureChannel) String() string {
         <property name="homogeneous">false</property>
         <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
         <child>
+          <object class="GtkBox" id="notification-area">
+            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+          </object>
+          <packing>
+            <property name="expand">false</property>
+            <property name="fill">true</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
           <object  class="GtkImage">
             <property  name="file">build/images/Pin_2.png</property>
           </object>
