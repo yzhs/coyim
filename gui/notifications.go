@@ -68,7 +68,6 @@ func showNotificationWhenWeCannotGeneratePINForSMP(err error, pinDialog gtki.Dia
 			errInfoBar.Destroy()
 		})
 	})
-	conv.verificationWarning.Hide()
 	errInfoBar.ShowAll()
 	conv.addNotification(errInfoBar)
 }
@@ -94,6 +93,9 @@ func showNewPinDialog(parent gtki.Window, conv *conversationPane, infoBar gtki.I
 	)
 	pin, err := createPIN()
 	if err != nil {
+		if conv.verificationWarning != nil {
+			conv.verificationWarning.Hide()
+		}
 		showNotificationWhenWeCannotGeneratePINForSMP(err, sharePinDialog, conv)
 		return
 	}
@@ -101,6 +103,9 @@ func showNewPinDialog(parent gtki.Window, conv *conversationPane, infoBar gtki.I
 		"on_gen_pin": func() {
 			pin, err = createPIN()
 			if err != nil {
+				if conv.verificationWarning != nil {
+					conv.verificationWarning.Hide()
+				}
 				showNotificationWhenWeCannotGeneratePINForSMP(err, sharePinDialog, conv)
 				return
 			}

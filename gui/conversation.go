@@ -42,7 +42,9 @@ type conversationView interface {
 }
 
 func (conv *conversationPane) displayRequestForSecret() {
-	conv.verificationWarning.Hide()
+	if conv.verificationWarning != nil {
+		conv.verificationWarning.Hide()
+	}
 	peer, ok := conv.currentPeer()
 	if !ok {
 		// XXX: Why would we not have a peer?
