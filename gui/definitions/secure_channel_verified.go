@@ -24,9 +24,7 @@ func (*defSecureChannelVerified) String() string {
           </packing>
         </child>
         <child>
-          <object class="GtkLabel">
-            <property name="label" translatable="yes">Now you will talk privately on a secure channel.</property>
-          </object>
+          <object class="GtkLabel" id="verification_message"/>
         </child>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="button_box">
