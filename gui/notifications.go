@@ -1,9 +1,13 @@
 package gui
 
 import (
+	"crypto/rand"
 	"fmt"
+	"log"
+	"math/big"
 
 	"github.com/twstrike/coyim/i18n"
+	rosters "github.com/twstrike/coyim/roster"
 	"github.com/twstrike/gotk3adapter/gtki"
 )
 
@@ -36,90 +40,119 @@ func (u *gtkUI) notifyConnectionFailure(account *account, moreInfo func()) {
 	})
 }
 
-func buildVerifyIdentityNotification(convPane *conversationPane) gtki.InfoBar {
-	builder := newBuilder("VerifyIdentityNotification")
-
-	obj := builder.getObj("infobar")
-	infoBar := obj.(gtki.InfoBar)
-
-	obj = builder.getObj("message")
-	message := obj.(gtki.Label)
-	message.SetSelectable(true)
-
-	text := i18n.Local("This conversation may not be secure.")
-	message.SetText(text)
-
-	obj = builder.getObj("button_verify")
-	button := obj.(gtki.Button)
+func buildStartVerificationNotification(convPane *conversationPane) gtki.InfoBar {
+	builder := newBuilder("StartVerificationNotification")
+	infoBar := builder.getObj("infobar").(gtki.InfoBar)
+	message := builder.getObj("message").(gtki.Label)
+	message.SetText(i18n.Local("Make sure no one else is reading your messages."))
+	button := builder.getObj("button_verify").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			secureChannel(convPane, infoBar)
+			showNewPinDialog(convPane.transientParent, convPane, infoBar)
 		})
 	})
-
 	infoBar.ShowAll()
-
 	return infoBar
 }
 
-func secureChannel(conv *conversationPane, infoBar gtki.InfoBar) {
-	builder := newBuilder("StartVerification")
-	d := builder.getObj("dialog").(gtki.Dialog)
-	cancelButton := builder.getObj("cancel_button").(gtki.Button)
-	cancelButton.Connect("clicked", func() {
-		d.Destroy()
-	})
-	validateButton := builder.getObj("validate_button").(gtki.Button)
-	validateButton.Connect("clicked", func() {
+func showNotificationWhenWeCannotGeneratePINForSMP(err error, pinDialog gtki.Dialog, conv *conversationPane) {
+	log.Printf("Cannot recover from error: %v. Quitting verification using SMP.", err)
+	pinDialog.Destroy()
+	errBuilder := newBuilder("CannotVerifyWithSMP")
+	errInfoBar := errBuilder.getObj("error_verifying_smp").(gtki.InfoBar)
+	message := errBuilder.getObj("message").(gtki.Label)
+	message.SetText(i18n.Local("Unable to verify the channel at this time."))
+	button := errBuilder.getObj("try_later_button").(gtki.Button)
+	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			smpValidationDialog(conv, infoBar)
-			d.Destroy()
+			errInfoBar.Destroy()
 		})
 	})
-	d.SetTransientFor(conv.transientParent)
-	d.ShowAll()
+	conv.verificationWarning.Hide()
+	errInfoBar.ShowAll()
+	conv.addNotification(errInfoBar)
 }
 
-func smpValidationDialog(conv *conversationPane, infoBar gtki.InfoBar) {
-	builder := newBuilder("ValidateSecureChannel")
-	d := builder.getObj("dialog").(gtki.Dialog)
-	submit := builder.getObj("button_submit").(gtki.Button)
-	submit.Connect("clicked", func() {
-		doInUIThread(func() {
-			infoBar.Hide()
-			e := builder.getObj("pin").(gtki.Entry)
-			// TODO require PIN entry before proceeding
-			_, err := e.GetText()
+func showWaitingForPeerToCompleteSMPDialog(peer *rosters.Peer, infoBar gtki.InfoBar, sharePinDialog gtki.Dialog, conv *conversationPane) {
+	builderWaitingSMP := newBuilder("WaitingSMPComplete")
+	waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
+	waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
+	waitingSMPMessage.SetText(i18n.Local(fmt.Sprintf("Waiting for %s to finish securing the channel...", peer.NameForPresentation())))
+	infoBar.Hide()
+	waitingInfoBar.ShowAll()
+	conv.waitingForSMP = waitingInfoBar
+	conv.addNotification(waitingInfoBar)
+	sharePinDialog.Destroy()
+}
+
+func showNewPinDialog(parent gtki.Window, conv *conversationPane, infoBar gtki.InfoBar) {
+	pinBuilder := newBuilder("GeneratePIN")
+	sharePinDialog := pinBuilder.getObj("dialog").(gtki.Dialog)
+	var pinLabel gtki.Label
+	pinBuilder.getItems(
+		"PinLabel", &pinLabel,
+	)
+	pin, err := createPIN()
+	if err != nil {
+		showNotificationWhenWeCannotGeneratePINForSMP(err, sharePinDialog, conv)
+		return
+	}
+	pinBuilder.ConnectSignals(map[string]interface{}{
+		"on_gen_pin": func() {
+			pin, err = createPIN()
 			if err != nil {
-				notificationBuilder := newBuilder("BadPINNotification")
-				notification := notificationBuilder.getObj("infobar").(gtki.InfoBar)
-				msg := notificationBuilder.getObj("message").(gtki.Label)
-				msg.SetText("A PIN is required")
-				area := builder.getObj("notification-area").(gtki.Box)
-				area.Add(notification)
+				showNotificationWhenWeCannotGeneratePINForSMP(err, sharePinDialog, conv)
+				return
 			}
-			builderWaitingSMP := newBuilder("WaitingSMPComplete")
-			waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
-			waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
+			pinLabel.SetText(pin)
+		},
+		"close_share_pin": func() {
 			peer, ok := conv.currentPeer()
 			if !ok {
 				// print that contact does not exist? this is impossible situation
 				return
 			}
-			waitingSMPMessage.SetText(i18n.Local(fmt.Sprintf("Waiting for %s to finish securing the channel...", peer.NameForPresentation())))
-			waitingInfoBar.ShowAll()
-			//conv.addNotification(waitingInfoBar)
-			//resource := conv.currentResource()
-			//conv.account.session.StartSMP(peer.Jid, resource, "Please enter the PIN that your peer shared with you.", pin)
+			showWaitingForPeerToCompleteSMPDialog(peer, infoBar, sharePinDialog, conv)
+			conv.account.session.StartSMP(peer.Jid, conv.currentResource(), "Please enter the PIN that your contact shared with you.", pin)
+		},
+	})
+	pinLabel.SetText(pin)
+	sharePinDialog.SetTransientFor(parent)
+	sharePinDialog.ShowAll()
+}
 
-			// SUBMIT PIN TO SMP BACKEND HERE
-			// check if success or failure
-			// if success
-			//     showSecureChannelCreated(d)
-			// else
-			//     showPINWasIncorrect(parent)
+func createPIN() (string, error) {
+	val, err := rand.Int(rand.Reader, big.NewInt(int64(1000000)))
+	if err != nil {
+		log.Printf("Error encountered when creating a new PIN: %v", err)
+		return "", err
+	}
+	return fmt.Sprintf("%06d", val), nil
+}
 
-			//showWaitingForSMPReply()
+func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
+	builder := newBuilder("VerifyChannel")
+	d := builder.getObj("dialog").(gtki.Dialog)
+	submit := builder.getObj("button_submit").(gtki.Button)
+	submit.Connect("clicked", func() {
+		doInUIThread(func() {
+			e := builder.getObj("pin").(gtki.Entry)
+			pin, err := e.GetText()
+			if err != nil {
+				// TODO: Don't allow blank submission - require a PIN. This is a WIP.
+
+				// notificationBuilder := newBuilder("BadPINNotification")
+				// notification := notificationBuilder.getObj("infoBar").(gtki.InfoBar)
+				// msg := notificationBuilder.getObj("message").(gtki.Label)
+				// msg.SetText("A PIN is required")
+				// area := builder.getObj("notification-area").(gtki.Box)
+				// area.Add(notification)
+			}
+			peer, ok := conv.currentPeer()
+			if !ok {
+				// TODO: handle when getting the current peer fails
+			}
+			conv.account.session.FinishSMP(peer.Jid, conv.currentResource(), pin)
 			d.Destroy()
 		})
 	})
@@ -147,8 +180,8 @@ func showPINWasIncorrect(parent gtki.Window) {
 	d.ShowAll()
 }
 
-func showSecureChannelCreated(parent gtki.Window) {
-	builder := newBuilder("SecureChannelCreated")
+func showThatChannelIsVerified(parent gtki.Window) {
+	builder := newBuilder("SecureChannelVerified")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	button := builder.getObj("button_ok").(gtki.Button)
 	button.Connect("clicked", func() {

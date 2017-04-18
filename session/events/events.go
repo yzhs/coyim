@@ -97,3 +97,23 @@ type Log struct {
 	Level   LogLevel
 	Message string
 }
+
+// SMP is an event related to SMP
+type SMP struct {
+	Type     SMPType
+	Session  access.Session
+	From     string
+	Resource string
+	When     time.Time
+	Body     string
+}
+
+// SMPType denotes the type of an SMP event
+type SMPType int
+
+// SMP types
+const (
+	SecretNeeded SMPType = iota
+	Success
+	Failure
+)

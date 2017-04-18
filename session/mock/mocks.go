@@ -167,3 +167,6 @@ func (*SessionMock) Timeout(data.Cookie, time.Time) {}
 
 // StartSMP is the implementation for Session interface
 func (*SessionMock) StartSMP(string, string, string, string) {}
+
+// FinishSMP is the implementation for Session interface
+func (*SessionMock) FinishSMP(string, string, string) {}

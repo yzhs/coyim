@@ -65,6 +65,7 @@ type Session interface {
 	Subscribe(chan<- interface{})
 	Timeout(data.Cookie, time.Time)
 	StartSMP(string, string, string, string)
+	FinishSMP(string, string, string)
 }
 
 // Factory is a function that can create new Sessions

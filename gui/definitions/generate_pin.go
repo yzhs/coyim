@@ -1,4 +1,13 @@
-<interface>
+package definitions
+
+func init() {
+	add(`GeneratePIN`, &defGeneratePIN{})
+}
+
+type defGeneratePIN struct{}
+
+func (*defGeneratePIN) String() string {
+	return `<interface>
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>
     <child internal-child="vbox">
@@ -18,12 +27,7 @@
               </child>
               <child>
                   <object class="GtkLabel">
-                      <property name="label" translatable="yes">Share the one time PIN below with this contact and remember it to validate your connection later.</property>
-                  </object>
-              </child>
-              <child>
-                  <object class="GtkLabel">
-                      <property name="label" translatable="yes">You will be prompted for the PIN after a conversation with them has started.</property>
+                      <property name="label" translatable="yes">Share the one time PIN below with this contact.</property>
                   </object>
               </child>
               <child>
@@ -129,3 +133,5 @@
     </child>
   </object>
 </interface>
+`
+}

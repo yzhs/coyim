@@ -24,7 +24,7 @@ var (
 )
 
 type conversationView interface {
-	showIdentityVerificationWarning(u *gtkUI)
+	showVerificationWarning(u *gtkUI)
 	updateSecurityWarning()
 	show(userInitiated bool)
 	appendStatus(from string, timestamp time.Time, show, showStatus string, gone bool)
@@ -37,6 +37,43 @@ type conversationView interface {
 	appendPendingDelayed()
 	haveShownPrivateEndedNotification()
 	haveShownPrivateNotification()
+	displayRequestForSecret()
+	displayVerificationSuccess()
+}
+
+func (conv *conversationPane) displayRequestForSecret() {
+	conv.verificationWarning.Hide()
+	peer, ok := conv.currentPeer()
+	if !ok {
+		// XXX: Why would we not have a peer?
+	}
+	b := newBuilder("PeerRequestsSMP")
+	infobar := b.getObj("peer_requests_smp").(gtki.InfoBar)
+	infobarMsg := b.getObj("message").(gtki.Label)
+
+	verificationButton := b.getObj("verification_button").(gtki.Button)
+	verificationButton.Connect("clicked", func() {
+		verifyChannelDialog(conv, infobar)
+	})
+
+	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", peer.NameForPresentation())
+	infobarMsg.SetText(message)
+	infobar.ShowAll()
+	conv.peerRequestsSMP = infobar
+	conv.addNotification(infobar)
+}
+
+func (conv *conversationPane) displayVerificationSuccess() {
+	showThatChannelIsVerified(conv.transientParent)
+	if conv.waitingForSMP != nil {
+		conv.waitingForSMP.Destroy()
+	}
+	if conv.verificationWarning != nil {
+		conv.verificationWarning.Destroy()
+	}
+	if conv.peerRequestsSMP != nil {
+		conv.peerRequestsSMP.Destroy()
+	}
 }
 
 type conversationWindow struct {
@@ -59,6 +96,8 @@ type conversationPane struct {
 	notificationArea    gtki.Box
 	securityWarning     gtki.InfoBar
 	verificationWarning gtki.InfoBar
+	waitingForSMP       gtki.InfoBar
+	peerRequestsSMP     gtki.InfoBar
 	// The window to set dialogs transient for
 	transientParent gtki.Window
 	sync.Mutex
@@ -211,7 +250,7 @@ func (conv *conversationPane) onEndOtrSignal() {
 func (conv *conversationPane) onVerifyFpSignal() {
 	switch verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent) {
 	case gtki.RESPONSE_YES:
-		conv.removeIdentityVerificationWarning()
+		conv.removeVerificationWarning()
 	}
 }
 
@@ -488,7 +527,7 @@ func (conv *conversationPane) isVerified(u *gtkUI) bool {
 	return hasPeer && p.HasTrustedFingerprint(fingerprint)
 }
 
-func (conv *conversationPane) showIdentityVerificationWarning(u *gtkUI) {
+func (conv *conversationPane) showVerificationWarning(u *gtkUI) {
 	conv.Lock()
 	defer conv.Unlock()
 
@@ -502,12 +541,12 @@ func (conv *conversationPane) showIdentityVerificationWarning(u *gtkUI) {
 		return
 	}
 
-	// TODO: should build verify identity notification be a conv method?
-	conv.verificationWarning = buildVerifyIdentityNotification(conv)
+	// TODO: should buildStartVerificationNotification() be a method on conv?
+	conv.verificationWarning = buildStartVerificationNotification(conv)
 	conv.addNotification(conv.verificationWarning)
 }
 
-func (conv *conversationPane) removeIdentityVerificationWarning() {
+func (conv *conversationPane) removeVerificationWarning() {
 	conv.Lock()
 	defer conv.Unlock()
 

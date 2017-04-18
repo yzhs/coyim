@@ -1,12 +1,12 @@
 package definitions
 
 func init() {
-	add(`VerifyIdentityNotification`, &defVerifyIdentityNotification{})
+	add(`StartVerificationNotification`, &defStartVerificationNotification{})
 }
 
-type defVerifyIdentityNotification struct{}
+type defStartVerificationNotification struct{}
 
-func (*defVerifyIdentityNotification) String() string {
+func (*defStartVerificationNotification) String() string {
 	return `<interface>
   <object class="GtkInfoBar" id="infobar">
     <property name="message-type">GTK_MESSAGE_WARNING</property>

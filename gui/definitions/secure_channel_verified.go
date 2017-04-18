@@ -1,12 +1,12 @@
 package definitions
 
 func init() {
-	add(`SecureChannelCreated`, &defSecureChannelCreated{})
+	add(`SecureChannelVerified`, &defSecureChannelVerified{})
 }
 
-type defSecureChannelCreated struct{}
+type defSecureChannelVerified struct{}
 
-func (*defSecureChannelCreated) String() string {
+func (*defSecureChannelVerified) String() string {
 	return `<interface>
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>

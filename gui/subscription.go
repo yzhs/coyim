@@ -1,10 +1,8 @@
 package gui
 
 import (
-	"crypto/rand"
 	"fmt"
 	"log"
-	"math/big"
 
 	"github.com/twstrike/coyim/i18n"
 	"github.com/twstrike/gotk3adapter/gtki"
@@ -133,76 +131,9 @@ func presenceSubscriptionDialog(accounts []*account, sendSubscription func(accou
 				log.Printf("Error encountered when sending subscription: %v", err)
 				return
 			}
-
-			showChooseVerificationDialog()
 			acd.dialog.Destroy()
 		},
 	})
 
 	return acd.dialog
-}
-
-func showChooseVerificationDialog() {
-	b := newBuilder("StartVerification")
-	d := b.getObj("dialog").(gtki.Dialog)
-	cancelButton := b.getObj("cancel_button").(gtki.Button)
-	cancelButton.Connect("clicked", func() {
-		d.Destroy()
-	})
-	useSMP := true
-	b.ConnectSignals(map[string]interface{}{
-		"use_smp": func() {
-			useSMP = true
-		},
-		"useSMP": func() {
-			useSMP = false
-		},
-	})
-	validateButton := b.getObj("validate_button").(gtki.Button)
-	validateButton.Connect("clicked", func() {
-		doInUIThread(func() {
-			showNewPinDialog(d)
-			d.Destroy()
-		})
-	})
-	d.ShowAll()
-}
-
-func showNewPinDialog(parent gtki.Window) {
-	sharePinBuilder := newBuilder("SMPWizard")
-	sharePinDialog := sharePinBuilder.getObj("dialog").(gtki.Dialog)
-	var pinLabel gtki.Label
-	sharePinBuilder.getItems(
-		"PinLabel", &pinLabel,
-	)
-	pin, err := createPIN()
-	if err != nil {
-		log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
-		sharePinDialog.Destroy()
-	}
-	sharePinBuilder.ConnectSignals(map[string]interface{}{
-		"on_gen_pin": func() {
-			pin, err := createPIN()
-			if err != nil {
-				log.Printf("Cannot recover from error: %v. Quitting SMP Wizard.", err)
-				sharePinDialog.Destroy()
-			}
-			pinLabel.SetText(pin)
-		},
-		"close_share_pin": func() {
-			sharePinDialog.Destroy()
-		},
-	})
-	pinLabel.SetText(pin)
-	sharePinDialog.SetTransientFor(parent)
-	sharePinDialog.ShowAll()
-}
-
-func createPIN() (string, error) {
-	val, err := rand.Int(rand.Reader, big.NewInt(int64(1000000)))
-	if err != nil {
-		log.Printf("Error encountered when creating a new PIN: %v", err)
-		return "", err
-	}
-	return fmt.Sprintf("%06d", val), nil
 }

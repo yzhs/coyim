@@ -662,12 +662,21 @@ func (s *session) receiveClientMessage(from, resource string, when time.Time, bo
 			s.info(fmt.Sprintf("%s has ended the secure conversation. You should do likewise with /otr-end %s", from, from))
 		}
 	case event.SMPSecretNeeded:
+		// CLI only
 		s.info(fmt.Sprintf("%s is attempting to authenticate. Please supply mutual shared secret with /otr-auth user secret", from))
 		if question := eh.SmpQuestion; len(question) > 0 {
 			s.info(fmt.Sprintf("%s asks: %s", from, question))
 		}
+
+		// GUI only
+		s.publishSMPEvent(events.SecretNeeded, from, resource, eh.SmpQuestion)
 	case event.SMPComplete:
+		// CLI only
 		s.info(fmt.Sprintf("Authentication with %s successful", from))
+
+		// GUI only
+		s.publishSMPEvent(events.Success, from, resource, "")
+
 		fpr := conversation.TheirFingerprint()
 		s.cmdManager.ExecuteCmd(client.AuthorizeFingerprintCmd{
 			Account:     s.GetConfig(),
@@ -675,6 +684,7 @@ func (s *session) receiveClientMessage(from, resource string, when time.Time, bo
 			Peer:        from,
 			Fingerprint: fpr,
 		})
+
 	case event.SMPFailed:
 		s.alert(fmt.Sprintf("Authentication with %s failed", from))
 	}
@@ -1082,12 +1092,21 @@ func (s *session) SendPing() {
 	}()
 }
 
-// StartSMP begins the SMP interactions for a session
+// StartSMP begins the SMP interactions for a conversation
 func (s *session) StartSMP(peer, resource, question, answer string) {
-	conversation, ok := s.convManager.GetConversationWith(peer, resource)
+	conv, ok := s.convManager.GetConversationWith(peer, resource)
 	if !ok {
-		// TODO manual test later
+		// TODO: Check if we get the conversation
+		// XXX: What happens when we do not get a conversation?
 	}
-	// TODO check error here
-	conversation.StartAuthenticate(s, resource, question, []byte(answer))
+	conv.StartAuthenticate(s, resource, question, []byte(answer))
+}
+
+// FinishSMP takes a user's SMP answer and finishes the protocol
+func (s *session) FinishSMP(peer, resource, answer string) {
+	conv, ok := s.convManager.GetConversationWith(peer, resource)
+	if !ok {
+		// TODO: Check if we get the conversation
+	}
+	conv.ProvideAuthenticationSecret(s, resource, []byte(answer))
 }

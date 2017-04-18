@@ -39,6 +39,10 @@ func (u *gtkUI) handleOneAccountEvent(ev interface{}) {
 		doInUIThread(func() {
 			u.handleLogEvent(t)
 		})
+	case events.SMP:
+		doInUIThread(func() {
+			u.handleSMPEvent(t)
+		})
 	default:
 		log.Printf("unsupported event %#v\n", t)
 	}
@@ -134,7 +138,7 @@ func convWindowNowOrLater(account *account, peer string, ui *gtkUI, f func(conve
 func (u *gtkUI) handlePeerEvent(ev events.Peer) {
 	identityWarning := func(cv conversationView) {
 		cv.updateSecurityWarning()
-		cv.showIdentityVerificationWarning(u)
+		cv.showVerificationWarning(u)
 	}
 
 	switch ev.Type {
@@ -212,4 +216,17 @@ func (u *gtkUI) handleDelayedMessageSentEvent(ev events.DelayedMessageSent) {
 		return
 	}
 	convWin.delayedMessageSent(ev.Tracer)
+}
+
+func (u *gtkUI) handleSMPEvent(ev events.SMP) {
+	account := u.findAccountForSession(ev.Session)
+	convWin, err := u.roster.openConversationView(account, ev.From, false)
+	if err != nil {
+		return
+	}
+	if ev.Type == events.SecretNeeded {
+		convWin.displayRequestForSecret()
+	} else {
+		convWin.displayVerificationSuccess()
+	}
 }
