@@ -185,9 +185,11 @@ func showPINWasIncorrect(parent gtki.Window) {
 	d.ShowAll()
 }
 
-func showThatChannelIsVerified(parent gtki.Window) {
+func showThatChannelIsVerified(peerName string, parent gtki.Window) {
 	builder := newBuilder("SecureChannelVerified")
 	d := builder.getObj("dialog").(gtki.Dialog)
+	msg := builder.getObj("verification_message").(gtki.Label)
+	msg.SetText(i18n.Local(fmt.Sprintf("Horray! No one is listening in on your conversations with %s", peerName)))
 	button := builder.getObj("button_ok").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {

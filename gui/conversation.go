@@ -66,7 +66,11 @@ func (conv *conversationPane) displayRequestForSecret() {
 }
 
 func (conv *conversationPane) displayVerificationSuccess() {
-	showThatChannelIsVerified(conv.transientParent)
+	peer, ok := conv.currentPeer()
+	if !ok {
+		// TODO: why would this happen
+	}
+	showThatChannelIsVerified(peer.NameForPresentation(), conv.transientParent)
 	if conv.waitingForSMP != nil {
 		conv.waitingForSMP.Destroy()
 	}
