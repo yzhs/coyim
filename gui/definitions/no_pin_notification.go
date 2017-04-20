@@ -1,12 +1,12 @@
 package definitions
 
 func init() {
-	add(`BadPINNotification`, &defBadPINNotification{})
+	add(`NoPINNotification`, &defNoPINNotification{})
 }
 
-type defBadPINNotification struct{}
+type defNoPINNotification struct{}
 
-func (*defBadPINNotification) String() string {
+func (*defNoPINNotification) String() string {
 	return `<interface>
   <object class="GtkInfoBar" id="infobar">
     <property name="message-type">GTK_MESSAGE_WARNING</property>

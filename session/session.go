@@ -686,7 +686,11 @@ func (s *session) receiveClientMessage(from, resource string, when time.Time, bo
 		})
 
 	case event.SMPFailed:
+		// CLI only
 		s.alert(fmt.Sprintf("Authentication with %s failed", from))
+
+		// GUI only
+		s.publishSMPEvent(events.Failure, from, resource, "")
 	}
 
 	if len(out) == 0 {

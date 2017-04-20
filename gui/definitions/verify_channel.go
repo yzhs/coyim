@@ -31,8 +31,8 @@ func (*defVerifyChannel) String() string {
           </object>
         </child>
         <child>
-          <object class="GtkLabel">
-            <property name="label" translatable="yes">Type your contact's PIN</property>
+          <object class="GtkLabel" id="verification_message">
+            <property name="label" translatable="yes"/>
           </object>
         </child>
         <child>
@@ -66,7 +66,7 @@ func (*defVerifyChannel) String() string {
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Your contact must have shared it with you previously. If not, try to ask this person:</property>
+            <property name="label" translatable="yes">Your contact must have shared it with you previously. If not, try to:</property>
           </object>
         </child>
         <child>
@@ -106,7 +106,7 @@ func (*defVerifyChannel) String() string {
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Ask in another encrypted channel</property>
+                    <property name="label" translatable="yes">Ask in another encrypted channel (not this one)</property>
                     <property name="justify">GTK_JUSTIFY_LEFT</property>
                     <property name="halign">GTK_ALIGN_START</property>
                 </object>
@@ -145,6 +145,7 @@ func (*defVerifyChannel) String() string {
               <object class="GtkButton" id="button_submit">
                 <property name="can-default">true</property>
                 <property name="label" translatable="yes">Submit</property>
+                <signal name="clicked" handler="close_share_pin"/>
               </object>
             </child>
           </object>

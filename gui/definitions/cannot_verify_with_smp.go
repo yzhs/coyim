@@ -24,7 +24,7 @@ func (*defCannotVerifyWithSMP) String() string {
       <object class="GtkBox" id="button_box">
         <child>
           <object class="GtkButton" id="try_later_button">
-            <property name="label" translatable="yes">Sorry</property>
+            <property name="label" translatable="yes">Try again later</property>
             <property name="can-default">true</property>
           </object>
         </child>

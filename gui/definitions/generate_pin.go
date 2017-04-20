@@ -11,7 +11,7 @@ func (*defGeneratePIN) String() string {
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>
     <child internal-child="vbox">
-        <object class="GtkBox" id="box">
+        <object class="GtkBox" id="notification-area">
           <property name="border-width">10</property>
           <property name="homogeneous">false</property>
           <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
@@ -26,8 +26,8 @@ func (*defGeneratePIN) String() string {
                   </object>
               </child>
               <child>
-                  <object class="GtkLabel">
-                      <property name="label" translatable="yes">Share the one time PIN below with this contact.</property>
+                  <object class="GtkLabel" id="SharePinLabel">
+                      <property name="label" translatable="yes"></property>
                   </object>
               </child>
               <child>

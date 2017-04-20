@@ -39,6 +39,7 @@ type conversationView interface {
 	haveShownPrivateNotification()
 	displayRequestForSecret()
 	displayVerificationSuccess()
+	displayVerificationFailure()
 }
 
 func (conv *conversationPane) displayRequestForSecret() {
@@ -68,9 +69,9 @@ func (conv *conversationPane) displayRequestForSecret() {
 func (conv *conversationPane) displayVerificationSuccess() {
 	peer, ok := conv.currentPeer()
 	if !ok {
-		// TODO: why would this happen
+		// TODO: Would this happen? And what would we do if it happened?
 	}
-	showThatChannelIsVerified(peer.NameForPresentation(), conv.transientParent)
+	showThatVerificationSucceeded(peer.NameForPresentation(), conv.transientParent)
 	if conv.waitingForSMP != nil {
 		conv.waitingForSMP.Destroy()
 	}
@@ -80,6 +81,14 @@ func (conv *conversationPane) displayVerificationSuccess() {
 	if conv.peerRequestsSMP != nil {
 		conv.peerRequestsSMP.Destroy()
 	}
+}
+
+func (conv *conversationPane) displayVerificationFailure() {
+	peer, ok := conv.currentPeer()
+	if !ok {
+		// TODO: Would this happen? And what would we do if it happened?
+	}
+	showThatVerificationFailed(peer.NameForPresentation(), conv, conv.transientParent)
 }
 
 type conversationWindow struct {
