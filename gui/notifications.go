@@ -8,6 +8,7 @@ import (
 
 	"github.com/twstrike/coyim/i18n"
 	rosters "github.com/twstrike/coyim/roster"
+	"github.com/twstrike/coyim/session/access"
 	"github.com/twstrike/gotk3adapter/gtki"
 )
 
@@ -147,16 +148,11 @@ type genPinDialog struct {
 	noPINNotification gtki.InfoBar
 }
 
-func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
+func pinInputDialog(peer *rosters.Peer, session access.Session, parent gtki.Window, currentResource string) gtki.Dialog {
 	gpDialog := &genPinDialog{}
-
 	builder := newBuilder("VerifyChannel")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	peer, ok := conv.currentPeer()
-	if !ok {
-		// ????
-	}
 	msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", peer.NameForPresentation())))
 	builder.ConnectSignals(map[string]interface{}{
 		"close_share_pin": func() {
@@ -171,17 +167,11 @@ func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 				gpDialog.noPINNotification = notificationBuilder.getObj("infobar").(gtki.InfoBar)
 				msg := notificationBuilder.getObj("message").(gtki.Label)
 				msg.SetText("PIN is required")
-
 				area.Add(gpDialog.noPINNotification)
 				area.ShowAll()
 				return
 			}
-			peer, ok := conv.currentPeer()
-			if !ok {
-				// TODO: handle when getting the current peer fails
-			}
-			conv.account.session.FinishSMP(peer.Jid, conv.currentResource(), pin)
-			d.Destroy()
+			session.FinishSMP(peer.Jid, currentResource, pin)
 		},
 	})
 
@@ -203,12 +193,22 @@ func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 	// 		if !ok {
 	// 			// TODO: handle when getting the current peer fails
 	// 		}
-	// 		conv.account.session.FinishSMP(peer.Jid, conv.currentResource(), pin)
-	// 		d.Destroy()
+	// 		session.FinishSMP(peer.Jid, conv.currentResource(), pin)
 	// 	})
 	// })
-	d.SetTransientFor(conv.transientParent)
+	d.SetTransientFor(parent)
 	d.ShowAll()
+	return d
+}
+
+func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
+	peer, ok := conv.currentPeer()
+	if !ok {
+		// ????
+	}
+	d := pinInputDialog(peer, conv.account.session, conv.transientParent, conv.currentResource())
+	d.Run()
+	d.Destroy()
 }
 
 func showThatVerificationFailed(peer string, conv *conversationPane, parent gtki.Window) {
