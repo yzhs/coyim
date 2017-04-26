@@ -1,12 +1,12 @@
 package definitions
 
 func init() {
-	add(`VerifyChannel`, &defVerifyChannel{})
+	add(`EnterPIN`, &defEnterPIN{})
 }
 
-type defVerifyChannel struct{}
+type defEnterPIN struct{}
 
-func (*defVerifyChannel) String() string {
+func (*defEnterPIN) String() string {
 	return `<interface>
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>

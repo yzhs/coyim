@@ -40,6 +40,7 @@ type conversationView interface {
 	displayRequestForSecret()
 	displayVerificationSuccess()
 	displayVerificationFailure()
+	resetSMPDisplays()
 }
 
 func (conv *conversationPane) displayRequestForSecret() {
@@ -80,6 +81,7 @@ func (conv *conversationPane) displayVerificationSuccess() {
 	}
 	if conv.peerRequestsSMP != nil {
 		conv.peerRequestsSMP.Destroy()
+		conv.peerRequestsSMP = nil
 	}
 }
 
@@ -127,6 +129,7 @@ type conversationPane struct {
 	shownPrivate         bool
 	isNewFingerprint     bool
 	hasSetNewFingerprint bool
+	verifier             *verifier
 }
 
 type tags struct {
@@ -550,15 +553,11 @@ func (conv *conversationPane) showVerificationWarning(u *gtkUI) {
 		log.Println("we are already showing a verification warning, so not doing it again")
 		return
 	}
-
 	if conv.isVerified(u) {
 		log.Println("We have a peer and a trusted fingerprint already, so no reason to warn")
 		return
 	}
-
-	// TODO: should buildStartVerificationNotification() be a method on conv?
-	conv.verificationWarning = buildStartVerificationNotification(conv)
-	conv.addNotification(conv.verificationWarning)
+	conv.verifier = newVerifier(conv)
 }
 
 func (conv *conversationPane) removeVerificationWarning() {
@@ -608,6 +607,15 @@ func (conv *conversationPane) storeDelayedMessage(trace int, message sentMessage
 
 func (conv *conversationPane) haveShownPrivateNotification() {
 	conv.shownPrivate = true
+}
+
+func (conv *conversationPane) resetSMPDisplays() {
+	if conv.waitingForSMP != nil {
+		conv.waitingForSMP.Destroy()
+	}
+	if conv.peerRequestsSMP != nil {
+		conv.peerRequestsSMP.Destroy()
+	}
 }
 
 func (conv *conversationPane) haveShownPrivateEndedNotification() {
