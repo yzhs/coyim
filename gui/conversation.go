@@ -60,7 +60,7 @@ func (conv *conversationPane) displayRequestForSecret() {
 	})
 
 	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", peer.NameForPresentation())
-	infobarMsg.SetText(message)
+	infobarMsg.SetText(i18n.Local(message))
 	infobar.ShowAll()
 	conv.peerRequestsSMP = infobar
 	conv.addNotification(infobar)

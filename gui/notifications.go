@@ -166,7 +166,7 @@ func pinInputDialog(peer *rosters.Peer, session access.Session, parent gtki.Wind
 				notificationBuilder := newBuilder("NoPINNotification")
 				gpDialog.noPINNotification = notificationBuilder.getObj("infobar").(gtki.InfoBar)
 				msg := notificationBuilder.getObj("message").(gtki.Label)
-				msg.SetText("PIN is required")
+				msg.SetText(i18n.Local("PIN is required"))
 				area.Add(gpDialog.noPINNotification)
 				area.ShowAll()
 				return
