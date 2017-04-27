@@ -69,7 +69,7 @@ type genPinDialog struct {
 	noPINNotification gtki.InfoBar
 }
 
-func pinInputDialog(peer *rosters.Peer, session access.Session, parent gtki.Window, currentResource string) gtki.Dialog {
+func pinInputDialog(peer *rosters.Peer, session access.Session, parent gtki.Window, currentResource string) {
 	gpDialog := &genPinDialog{}
 	builder := newBuilder("EnterPIN")
 	d := builder.getObj("dialog").(gtki.Dialog)
@@ -90,15 +90,19 @@ func pinInputDialog(peer *rosters.Peer, session access.Session, parent gtki.Wind
 				msg.SetText(i18n.Local("PIN is required"))
 				area.Add(gpDialog.noPINNotification)
 				area.ShowAll()
+				d.Run()
 				return
 			}
 			session.FinishSMP(peer.Jid, currentResource, pin)
+			d.Destroy()
 		},
 	})
 
 	d.SetTransientFor(parent)
 	d.ShowAll()
-	return d
+	d.Run()
+	d.Destroy()
+	return
 }
 
 func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
@@ -106,9 +110,7 @@ func verifyChannelDialog(conv *conversationPane, infoBar gtki.InfoBar) {
 	if !ok {
 		// ????
 	}
-	d := pinInputDialog(peer, conv.account.session, conv.transientParent, conv.currentResource())
-	d.Run()
-	d.Destroy()
+	pinInputDialog(peer, conv.account.session, conv.transientParent, conv.currentResource())
 }
 
 func showThatVerificationFailed(peer string, conv *conversationPane, parent gtki.Window) {
