@@ -56,7 +56,7 @@ func (ds *displaySettings) update() {
 .currentBackgroundColor {
   background-color: #fff;
 }
-`, ds.defaultFontSize, ds.fontSize)
+`, ds.defaultFontSize)
 	doInUIThread(func() {
 		ds.provider.LoadFromData(css)
 	})

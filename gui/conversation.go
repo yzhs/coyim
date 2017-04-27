@@ -12,6 +12,7 @@ import (
 	"github.com/twstrike/coyim/i18n"
 	rosters "github.com/twstrike/coyim/roster"
 	"github.com/twstrike/coyim/session/access"
+	"github.com/twstrike/coyim/session/events"
 	"github.com/twstrike/coyim/ui"
 	"github.com/twstrike/gotk3adapter/gdki"
 	"github.com/twstrike/gotk3adapter/glibi"
@@ -37,60 +38,7 @@ type conversationView interface {
 	appendPendingDelayed()
 	haveShownPrivateEndedNotification()
 	haveShownPrivateNotification()
-	displayRequestForSecret()
-	displayVerificationSuccess()
-	displayVerificationFailure()
-	resetSMPDisplays()
-}
-
-func (conv *conversationPane) displayRequestForSecret() {
-	if conv.verificationWarning != nil {
-		conv.verificationWarning.Hide()
-	}
-	peer, ok := conv.currentPeer()
-	if !ok {
-		// XXX: Why would we not have a peer?
-	}
-	b := newBuilder("PeerRequestsSMP")
-	infobar := b.getObj("peer_requests_smp").(gtki.InfoBar)
-	infobarMsg := b.getObj("message").(gtki.Label)
-
-	verificationButton := b.getObj("verification_button").(gtki.Button)
-	verificationButton.Connect("clicked", func() {
-		verifyChannelDialog(conv, infobar)
-	})
-
-	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", peer.NameForPresentation())
-	infobarMsg.SetText(i18n.Local(message))
-	infobar.ShowAll()
-	conv.peerRequestsSMP = infobar
-	conv.addNotification(infobar)
-}
-
-func (conv *conversationPane) displayVerificationSuccess() {
-	peer, ok := conv.currentPeer()
-	if !ok {
-		// TODO: Would this happen? And what would we do if it happened?
-	}
-	showThatVerificationSucceeded(peer.NameForPresentation(), conv.transientParent)
-	if conv.waitingForSMP != nil {
-		conv.waitingForSMP.Destroy()
-	}
-	if conv.verificationWarning != nil {
-		conv.verificationWarning.Destroy()
-	}
-	if conv.peerRequestsSMP != nil {
-		conv.peerRequestsSMP.Destroy()
-		conv.peerRequestsSMP = nil
-	}
-}
-
-func (conv *conversationPane) displayVerificationFailure() {
-	peer, ok := conv.currentPeer()
-	if !ok {
-		// TODO: Would this happen? And what would we do if it happened?
-	}
-	showThatVerificationFailed(peer.NameForPresentation(), conv, conv.transientParent)
+	handleSMPEvent(events.SMP)
 }
 
 type conversationWindow struct {
@@ -100,21 +48,18 @@ type conversationWindow struct {
 }
 
 type conversationPane struct {
-	to                  string
-	account             *account
-	widget              gtki.Box
-	menubar             gtki.MenuBar
-	entry               gtki.TextView
-	entryScroll         gtki.ScrolledWindow
-	history             gtki.TextView
-	pending             gtki.TextView
-	scrollHistory       gtki.ScrolledWindow
-	scrollPending       gtki.ScrolledWindow
-	notificationArea    gtki.Box
-	securityWarning     gtki.InfoBar
-	verificationWarning gtki.InfoBar
-	waitingForSMP       gtki.InfoBar
-	peerRequestsSMP     gtki.InfoBar
+	to               string
+	account          *account
+	widget           gtki.Box
+	menubar          gtki.MenuBar
+	entry            gtki.TextView
+	entryScroll      gtki.ScrolledWindow
+	history          gtki.TextView
+	pending          gtki.TextView
+	scrollHistory    gtki.ScrolledWindow
+	scrollPending    gtki.ScrolledWindow
+	notificationArea gtki.Box
+	securityWarning  gtki.InfoBar
 	// The window to set dialogs transient for
 	transientParent gtki.Window
 	sync.Mutex
@@ -265,12 +210,13 @@ func (conv *conversationPane) onEndOtrSignal() {
 	}
 }
 
-func (conv *conversationPane) onVerifyFpSignal() {
-	switch verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent) {
-	case gtki.RESPONSE_YES:
-		conv.removeVerificationWarning()
-	}
-}
+// TODO: move this to verifier module
+//func (conv *conversationPane) onVerifyFpSignal() {
+//	switch verifyFingerprintDialog(conv.account, conv.to, conv.currentResource(), conv.transientParent) {
+//	case gtki.RESPONSE_YES:
+//		conv.removeVerificationWarning()
+//	}
+//}
 
 func (conv *conversationPane) onConnect() {
 	conv.entry.SetEditable(true)
@@ -340,9 +286,10 @@ func createConversationPane(account *account, uid string, ui *gtkUI, transientPa
 	builder.ConnectSignals(map[string]interface{}{
 		"on_start_otr_signal": cp.onStartOtrSignal,
 		"on_end_otr_signal":   cp.onEndOtrSignal,
-		"on_verify_fp_signal": cp.onVerifyFpSignal,
-		"on_connect":          cp.onConnect,
-		"on_disconnect":       cp.onDisconnect,
+		// TODO: put this back
+		//"on_verify_fp_signal": cp.onVerifyFpSignal,
+		"on_connect":    cp.onConnect,
+		"on_disconnect": cp.onDisconnect,
 	})
 
 	cp.entryScroll.SetProperty("height-request", cp.calculateHeight(1))
@@ -549,10 +496,11 @@ func (conv *conversationPane) showVerificationWarning(u *gtkUI) {
 	conv.Lock()
 	defer conv.Unlock()
 
-	if conv.verificationWarning != nil {
-		log.Println("we are already showing a verification warning, so not doing it again")
-		return
-	}
+	// TODO: make sure this case is handled
+	//if conv.verificationWarning != nil {
+	//	log.Println("we are already showing a verification warning, so not doing it again")
+	//	return
+	//}
 	if conv.isVerified(u) {
 		log.Println("We have a peer and a trusted fingerprint already, so no reason to warn")
 		return
@@ -560,16 +508,17 @@ func (conv *conversationPane) showVerificationWarning(u *gtkUI) {
 	conv.verifier = newVerifier(conv)
 }
 
-func (conv *conversationPane) removeVerificationWarning() {
-	conv.Lock()
-	defer conv.Unlock()
-
-	if conv.verificationWarning != nil {
-		conv.verificationWarning.Hide()
-		conv.verificationWarning.Destroy()
-		conv.verificationWarning = nil
-	}
-}
+// TODO: move this to verifier module
+//func (conv *conversationPane) removeVerificationWarning() {
+//	conv.Lock()
+//	defer conv.Unlock()
+//
+//	if conv.verificationWarning != nil {
+//		conv.verificationWarning.Hide()
+//		conv.verificationWarning.Destroy()
+//		conv.verificationWarning = nil
+//	}
+//}
 
 func (conv *conversationPane) updateSecurityWarning() {
 	conversation, ok := conv.getConversation()
@@ -607,15 +556,6 @@ func (conv *conversationPane) storeDelayedMessage(trace int, message sentMessage
 
 func (conv *conversationPane) haveShownPrivateNotification() {
 	conv.shownPrivate = true
-}
-
-func (conv *conversationPane) resetSMPDisplays() {
-	if conv.waitingForSMP != nil {
-		conv.waitingForSMP.Destroy()
-	}
-	if conv.peerRequestsSMP != nil {
-		conv.peerRequestsSMP.Destroy()
-	}
 }
 
 func (conv *conversationPane) haveShownPrivateEndedNotification() {
@@ -924,6 +864,14 @@ func (conv *conversationPane) displayNotificationVerifiedOrNot(u *gtkUI, notific
 	if conv.isNewFingerprint {
 		conv.displayNotification(i18n.Local("The peer is using a key we haven't seen before!"))
 	}
+}
+
+func (conv *conversationPane) handleSMPEvent(ev events.SMP) {
+	peer, ok := conv.currentPeer()
+	if !ok {
+		//???
+	}
+	conv.verifier.handle(ev, peer, conv.transientParent, conv.currentResource())
 }
 
 func (conv *conversationWindow) setEnabled(enabled bool) {

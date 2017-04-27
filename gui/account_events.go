@@ -224,13 +224,5 @@ func (u *gtkUI) handleSMPEvent(ev events.SMP) {
 	if err != nil {
 		return
 	}
-
-	switch ev.Type {
-	case events.SecretNeeded:
-		convWin.displayRequestForSecret()
-	case events.Success:
-		convWin.displayVerificationSuccess()
-	case events.Failure:
-		convWin.displayVerificationFailure()
-	}
+	convWin.handleSMPEvent(ev)
 }
