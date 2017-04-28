@@ -867,11 +867,7 @@ func (conv *conversationPane) displayNotificationVerifiedOrNot(u *gtkUI, notific
 }
 
 func (conv *conversationPane) handleSMPEvent(ev events.SMP) {
-	peer, ok := conv.currentPeer()
-	if !ok {
-		//???
-	}
-	conv.verifier.handle(ev, peer, conv.transientParent, conv.currentResource())
+	conv.verifier.handle(ev)
 }
 
 func (conv *conversationWindow) setEnabled(enabled bool) {

@@ -12,8 +12,10 @@ import (
 )
 
 type verifier struct {
-	state               verificationState
+	state               verifierState
+	peer                *rosters.Peer
 	parent              gtki.Window
+	currentResource     string
 	session             access.Session
 	notifier            *notifier
 	newPinDialog        gtki.Dialog
@@ -30,16 +32,14 @@ func (n *notifier) notify(i gtki.InfoBar) {
 	n.notificationArea.Add(i)
 }
 
-func (n *notifier) stopNotifying(i gtki.InfoBar) {
-
-}
-
-type verificationState int
+type verifierState int
 
 const (
-	unverified verificationState = iota
-	success
+	unverified verifierState = iota
+	peerRequestsSMP
 	waitingForAnswerFromPeer
+	success
+	failure
 )
 
 func newVerifier(conv *conversationPane) *verifier {
@@ -49,87 +49,91 @@ func newVerifier(conv *conversationPane) *verifier {
 	if !ok {
 		// ???
 	}
-	v.verificationWarning = v.buildStartVerificationNotification(peer, conv.transientParent, conv.currentResource())
+	v.peer = peer
+	v.parent = conv.transientParent
+	v.currentResource = conv.currentResource()
+	v.verificationWarning = v.buildStartVerificationNotification()
 	v.notifier.notify(v.verificationWarning)
 	return v
 }
 
-func (v *verifier) buildStartVerificationNotification(peer *rosters.Peer, parent gtki.Window, resource string) gtki.InfoBar {
+func (v *verifier) buildStartVerificationNotification() gtki.InfoBar {
 	builder := newBuilder("StartVerificationNotification")
-	infoBar := builder.getObj("infobar").(gtki.InfoBar)
+	verificationWarning := builder.getObj("infobar").(gtki.InfoBar)
 	message := builder.getObj("message").(gtki.Label)
 	message.SetText(i18n.Local("Make sure no one else is reading your messages."))
 	button := builder.getObj("button_verify").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			d := v.showNewPinDialog(peer, parent, resource, infoBar)
+			d := v.showNewPinDialog(verificationWarning)
 			d.Run()
 			d.Destroy()
 		})
 	})
-	infoBar.ShowAll()
-	return infoBar
+	verificationWarning.ShowAll()
+	return verificationWarning
 }
 
-func (v *verifier) showNewPinDialog(peer *rosters.Peer, parent gtki.Window, resource string, infoBar gtki.InfoBar) gtki.Dialog {
+func (v *verifier) smpError(err error) {
+	if v.verificationWarning != nil {
+		v.verificationWarning.Hide()
+	}
+	v.showNotificationWhenWeCannotGeneratePINForSMP(err)
+}
+
+func (v *verifier) showNewPinDialog(verificationWarning gtki.InfoBar) gtki.Dialog {
 	pinBuilder := newBuilder("GeneratePIN")
 	sharePINDialog := pinBuilder.getObj("dialog").(gtki.Dialog)
 	msg := pinBuilder.getObj("SharePinLabel").(gtki.Label)
-	msg.SetText(fmt.Sprintf(i18n.Local("Share the one-time PIN below with %s"), peer.NameForPresentation()))
+	msg.SetText(fmt.Sprintf(i18n.Local("Share the one-time PIN below with %s"), v.peer.NameForPresentation()))
 	var pinLabel gtki.Label
 	pinBuilder.getItems(
 		"PinLabel", &pinLabel,
 	)
 	pin, err := createPIN()
 	if err != nil {
-		if v.verificationWarning != nil {
-			v.verificationWarning.Hide()
-		}
-		v.showNotificationWhenWeCannotGeneratePINForSMP(err, sharePINDialog)
+		sharePINDialog.Destroy()
+		v.smpError(err)
 		return sharePINDialog
 	}
 	pinBuilder.ConnectSignals(map[string]interface{}{
 		"on_gen_pin": func() {
 			pin, err = createPIN()
 			if err != nil {
-				if v.verificationWarning != nil {
-					v.verificationWarning.Hide()
-				}
-				v.showNotificationWhenWeCannotGeneratePINForSMP(err, sharePINDialog)
-				return
+				sharePINDialog.Destroy()
+				v.smpError(err)
 			}
 			pinLabel.SetText(pin)
 		},
 		"close_share_pin": func() {
 			if v.peerRequestsSMP != nil {
-				showSMPHasAlreadyStarted(peer.NameForPresentation(), sharePINDialog)
+				showSMPHasAlreadyStarted(v.peer.NameForPresentation(), sharePINDialog)
 				return
 			}
-			infoBar.Hide()
-			v.showWaitingForPeerToCompleteSMPDialog(peer.NameForPresentation(), sharePINDialog)
-			v.session.StartSMP(peer.Jid, resource, i18n.Local("Please enter the PIN that your contact shared with you."), pin)
+			verificationWarning.Hide()
+			v.showWaitingForPeerToCompleteSMPDialog(sharePINDialog)
+			v.session.StartSMP(v.peer.Jid, v.currentResource, i18n.Local("Please enter the PIN that your contact shared with you."), pin)
 		},
 	})
 	pinLabel.SetText(pin)
-	sharePINDialog.SetTransientFor(parent)
+	sharePINDialog.SetTransientFor(v.parent)
 	sharePINDialog.ShowAll()
 	return sharePINDialog
 }
 
-func (v *verifier) showWaitingForPeerToCompleteSMPDialog(peer string, sharePINDialog gtki.Dialog) {
+func (v *verifier) showWaitingForPeerToCompleteSMPDialog(sharePINDialog gtki.Dialog) {
 	builderWaitingSMP := newBuilder("WaitingSMPComplete")
 	waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
 	waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
-	waitingSMPMessage.SetText(fmt.Sprintf(i18n.Local("Waiting for %s to finish securing the channel..."), peer))
+	waitingSMPMessage.SetText(fmt.Sprintf(i18n.Local("Waiting for %s to finish securing the channel..."), v.peer.NameForPresentation()))
 	waitingInfoBar.ShowAll()
 	v.waitingForSMP = waitingInfoBar
 	v.notifier.notify(waitingInfoBar)
 	sharePINDialog.Destroy()
 }
 
-func (v *verifier) showNotificationWhenWeCannotGeneratePINForSMP(err error, pinDialog gtki.Dialog) {
+func (v *verifier) showNotificationWhenWeCannotGeneratePINForSMP(err error) {
 	log.Printf("Cannot recover from error: %v. Quitting verification using SMP.", err)
-	pinDialog.Destroy()
 	errBuilder := newBuilder("CannotVerifyWithSMP")
 	errInfoBar := errBuilder.getObj("error_verifying_smp").(gtki.InfoBar)
 	message := errBuilder.getObj("message").(gtki.Label)
@@ -144,10 +148,8 @@ func (v *verifier) showNotificationWhenWeCannotGeneratePINForSMP(err error, pinD
 	v.notifier.notify(errInfoBar)
 }
 
-func (v *verifier) displayRequestForSecret(peer *rosters.Peer, parent gtki.Window, resource string) {
-	if v.verificationWarning != nil {
-		v.verificationWarning.Hide()
-	}
+func (v *verifier) displayRequestForSecret() {
+	v.disableNotifications()
 	b := newBuilder("PeerRequestsSMP")
 	infobar := b.getObj("peer_requests_smp").(gtki.InfoBar)
 	infobarMsg := b.getObj("message").(gtki.Label)
@@ -157,7 +159,7 @@ func (v *verifier) displayRequestForSecret(peer *rosters.Peer, parent gtki.Windo
 		builder := newBuilder("EnterPIN")
 		d := builder.getObj("dialog").(gtki.Dialog)
 		msg := builder.getObj("verification_message").(gtki.Label)
-		msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", peer.NameForPresentation())))
+		msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", v.peer.NameForPresentation())))
 		builder.ConnectSignals(map[string]interface{}{
 			"close_share_pin": func() {
 				e := builder.getObj("pin").(gtki.Entry)
@@ -176,79 +178,98 @@ func (v *verifier) displayRequestForSecret(peer *rosters.Peer, parent gtki.Windo
 					d.Run()
 					return
 				}
-				v.session.FinishSMP(peer.Jid, resource, pin)
+				v.session.FinishSMP(v.peer.Jid, v.currentResource, pin)
 				d.Destroy()
 			},
 		})
-		d.SetTransientFor(parent)
+		d.SetTransientFor(v.parent)
 		d.ShowAll()
 		d.Run()
 		d.Destroy()
 	})
-	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", peer.NameForPresentation())
+	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", v.peer.NameForPresentation())
 	infobarMsg.SetText(i18n.Local(message))
 	infobar.ShowAll()
 	v.peerRequestsSMP = infobar
 	v.notifier.notify(infobar)
 }
 
-func (v *verifier) displayVerificationSuccess(peer *rosters.Peer, parent gtki.Window) {
+func (v *verifier) displayVerificationSuccess() {
 	builder := newBuilder("VerificationSucceeded")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Local(fmt.Sprintf("Horray! No one is listening in on your conversations with %s", peer.NameForPresentation())))
+	msg.SetText(i18n.Local(fmt.Sprintf("Horray! No one is listening in on your conversations with %s", v.peer.NameForPresentation())))
 	button := builder.getObj("button_ok").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
 			d.Destroy()
 		})
 	})
-	d.SetTransientFor(parent)
+	d.SetTransientFor(v.parent)
 	d.ShowAll()
-	if v.waitingForSMP != nil {
-		v.waitingForSMP.Destroy()
-	}
-	if v.verificationWarning != nil {
-		v.verificationWarning.Destroy()
-	}
-	if v.peerRequestsSMP != nil {
-		v.peerRequestsSMP.Destroy()
-		v.peerRequestsSMP = nil
-	}
+	v.disableNotifications()
 }
 
-func (v *verifier) displayVerificationFailure(peer *rosters.Peer, parent gtki.Window) {
+func (v *verifier) displayVerificationFailure() {
 	builder := newBuilder("VerificationFailed")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Local(fmt.Sprintf("We failed to verify this channel with %s\n\n Maybe:", peer.NameForPresentation())))
+	msg.SetText(i18n.Local(fmt.Sprintf("We failed to verify this channel with %s\n\n Maybe:", v.peer.NameForPresentation())))
 	tryLaterButton := builder.getObj("try_later").(gtki.Button)
 	tryLaterButton.Connect("clicked", func() {
 		doInUIThread(func() {
-			// TODO: This is hacky and the checks will only apply to one of the peers at a time. We should do something better.
-			if v.peerRequestsSMP != nil {
-				v.peerRequestsSMP.Destroy()
-				v.peerRequestsSMP = nil
-			}
-			if v.waitingForSMP != nil {
-				v.waitingForSMP.Destroy()
-			}
+			v.disableNotifications()
 			v.verificationWarning.Show()
 			d.Destroy()
 		})
 	})
-	d.SetTransientFor(parent)
+	d.SetTransientFor(v.parent)
 	d.ShowAll()
-
 }
 
-func (v *verifier) handle(ev events.SMP, peer *rosters.Peer, parent gtki.Window, resource string) {
+func (v *verifier) disableNotifications() {
+	switch v.state {
+	case success:
+		if v.waitingForSMP != nil {
+			v.waitingForSMP.Destroy()
+		}
+		if v.verificationWarning != nil {
+			v.verificationWarning.Destroy()
+		}
+		if v.peerRequestsSMP != nil {
+			v.peerRequestsSMP.Destroy()
+			v.peerRequestsSMP = nil
+		}
+	case failure:
+		// TODO: This is hacky and the checks will only apply to one of the peers at a time. We should do something better.
+		if v.peerRequestsSMP != nil {
+			v.peerRequestsSMP.Destroy()
+			v.peerRequestsSMP = nil
+		}
+		if v.waitingForSMP != nil {
+			v.waitingForSMP.Destroy()
+		}
+	case peerRequestsSMP:
+		if v.verificationWarning != nil {
+			v.verificationWarning.Hide()
+		}
+		// TODO: test this with someone else
+		if v.peerRequestsSMP != nil {
+			v.peerRequestsSMP.Destroy()
+		}
+	}
+}
+
+func (v *verifier) handle(ev events.SMP) {
 	switch ev.Type {
 	case events.SecretNeeded:
-		v.displayRequestForSecret(peer, parent, resource)
+		v.state = peerRequestsSMP
+		v.displayRequestForSecret()
 	case events.Success:
-		v.displayVerificationSuccess(peer, parent)
+		v.state = success
+		v.displayVerificationSuccess()
 	case events.Failure:
-		v.displayVerificationFailure(peer, parent)
+		v.state = failure
+		v.displayVerificationFailure()
 	}
 }
