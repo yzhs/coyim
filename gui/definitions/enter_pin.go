@@ -143,7 +143,6 @@ func (*defEnterPIN) String() string {
             <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
             <child>
               <object class="GtkButton" id="button_submit">
-                <property name="receives-default">True</property>
                 <property name="label" translatable="yes">Submit</property>
                 <signal name="clicked" handler="close_share_pin"/>
               </object>
