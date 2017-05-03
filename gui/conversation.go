@@ -288,6 +288,8 @@ func createConversationPane(account *account, uid string, ui *gtkUI, transientPa
 		"messageScroll", &cp.entryScroll,
 	)
 
+	cp.verifier = newVerifier(cp)
+
 	builder.ConnectSignals(map[string]interface{}{
 		"on_start_otr_signal": cp.onStartOtrSignal,
 		"on_end_otr_signal":   cp.onEndOtrSignal,
@@ -510,7 +512,7 @@ func (conv *conversationPane) showVerificationWarning(u *gtkUI) {
 		log.Println("We have a peer and a trusted fingerprint already, so no reason to warn")
 		return
 	}
-	conv.verifier = newVerifier(conv)
+	conv.verifier.buildStartVerificationNotification()
 }
 
 // TODO: move this to verifier module

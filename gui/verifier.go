@@ -53,8 +53,6 @@ func newVerifier(conv *conversationPane) *verifier {
 	v.peer = peer
 	v.parent = conv.transientParent
 	v.currentResource = conv.currentResource()
-	v.buildStartVerificationNotification()
-	v.notifier.notify(v.verificationWarning)
 	return v
 }
 
@@ -67,11 +65,13 @@ func (v *verifier) buildStartVerificationNotification() {
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
 			d := v.showNewPinDialog()
+			// TODO: remove modal window
 			d.Run()
 			d.Destroy()
 		})
 	})
 	v.verificationWarning.ShowAll()
+	v.notifier.notify(v.verificationWarning)
 }
 
 func (v *verifier) smpError(err error) {
