@@ -27,7 +27,7 @@ func (*defEnterPIN) String() string {
         </child>
         <child>
           <object  class="GtkImage">
-            <property  name="file">build/images/checkcode.svg</property>
+            <property  name="file">build/images/enter_pin.svg</property>
           </object>
         </child>
         <child>
