@@ -206,7 +206,7 @@ func (v *verifier) displayVerificationFailure() {
 	builder := newBuilder("VerificationFailed")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Local(fmt.Sprintf("We failed to verify this channel with %s\n\n Maybe:", v.peer.NameForPresentation())))
+	msg.SetText(fmt.Sprintf(i18n.Local("We failed to verify this channel with %s\n\n Maybe:"), v.peer.NameForPresentation()))
 	tryLaterButton := builder.getObj("try_later").(gtki.Button)
 	tryLaterButton.Connect("clicked", func() {
 		doInUIThread(func() {
