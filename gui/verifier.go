@@ -155,29 +155,21 @@ func (v *verifier) displayRequestForSecret() {
 	infobarMsg := b.getObj("message").(gtki.Label)
 	verificationButton := b.getObj("verification_button").(gtki.Button)
 	verificationButton.Connect("clicked", func() {
-		gpDialog := &genPinDialog{}
 		builder := newBuilder("EnterPIN")
 		d := builder.getObj("dialog").(gtki.Dialog)
 		msg := builder.getObj("verification_message").(gtki.Label)
 		msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", v.peer.NameForPresentation())))
+		button := builder.getObj("button_submit").(gtki.Button)
+		button.SetSensitive(false)
 		builder.ConnectSignals(map[string]interface{}{
+			"on_text_entry": func() {
+				e := builder.getObj("pin").(gtki.Entry)
+				pin, _ := e.GetText()
+				button.SetSensitive(len(pin) > 0)
+			},
 			"close_share_pin": func() {
 				e := builder.getObj("pin").(gtki.Entry)
 				pin, _ := e.GetText()
-				if pin == "" {
-					area := builder.getObj("notification-area").(gtki.Box)
-					if gpDialog.noPINNotification != nil {
-						area.Remove(gpDialog.noPINNotification)
-					}
-					notificationBuilder := newBuilder("NoPINNotification")
-					gpDialog.noPINNotification = notificationBuilder.getObj("infobar").(gtki.InfoBar)
-					msg := notificationBuilder.getObj("message").(gtki.Label)
-					msg.SetText(i18n.Local("PIN is required"))
-					area.Add(gpDialog.noPINNotification)
-					area.ShowAll()
-					d.Run()
-					return
-				}
 				v.session.FinishSMP(v.peer.Jid, v.currentResource, pin)
 				d.Destroy()
 			},
