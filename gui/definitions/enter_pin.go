@@ -8,6 +8,10 @@ type defEnterPIN struct{}
 
 func (*defEnterPIN) String() string {
 	return `<interface>
+  <object class="GtkEntryBuffer" id="pin_entry_buffer">
+    <signal name="inserted-text" handler="text_changing"/>
+    <signal name="deleted-text" handler="text_changing"/>
+  </object>
   <object class="GtkDialog" id="dialog">
     <property name="window-position">GTK_WIN_POS_CENTER</property>
     <child internal-child="vbox">
@@ -56,7 +60,7 @@ func (*defEnterPIN) String() string {
             </child>
             <child>
               <object  class="GtkEntry" id="pin">
-                <signal  name="key-press-event" handler="on_text_entry"/>
+                <property name="buffer">pin_entry_buffer</property>
               </object>
               <packing>
                 <property name="top-attach">0</property>
@@ -152,7 +156,7 @@ func (*defEnterPIN) String() string {
       </object>
     </child>
     <action-widgets>
-      <action-widget response="ok" default="true">button_submit</action-widget>
+      <action-widget response="ok">button_submit</action-widget>
     </action-widgets>
   </object>
 </interface>

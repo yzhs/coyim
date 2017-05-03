@@ -38,6 +38,7 @@ const (
 	unverified verifierState = iota
 	peerRequestsSMP
 	waitingForAnswerFromPeer
+	finishedAnsweringPeer
 	success
 	failure
 	smpErr
@@ -162,7 +163,7 @@ func (v *verifier) displayRequestForSecret() {
 		button := builder.getObj("button_submit").(gtki.Button)
 		button.SetSensitive(false)
 		builder.ConnectSignals(map[string]interface{}{
-			"on_text_entry": func() {
+			"text_changing": func() {
 				e := builder.getObj("pin").(gtki.Entry)
 				pin, _ := e.GetText()
 				button.SetSensitive(len(pin) > 0)
@@ -170,6 +171,9 @@ func (v *verifier) displayRequestForSecret() {
 			"close_share_pin": func() {
 				e := builder.getObj("pin").(gtki.Entry)
 				pin, _ := e.GetText()
+				v.state = finishedAnsweringPeer
+				v.disableNotifications()
+				v.showWaitingForPeerToCompleteSMPDialog(d)
 				v.session.FinishSMP(v.peer.Jid, v.currentResource, pin)
 				d.Destroy()
 			},
@@ -228,6 +232,8 @@ func (v *verifier) disableNotifications() {
 		v.verificationWarning.Show()
 	case waitingForAnswerFromPeer, peerRequestsSMP, smpErr:
 		v.verificationWarning.Hide()
+	case finishedAnsweringPeer:
+		v.removeInProgressNotifications()
 	}
 }
 
