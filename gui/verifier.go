@@ -19,6 +19,7 @@ type verifier struct {
 	session             access.Session
 	notifier            *notifier
 	newPinDialog        gtki.Dialog
+	enterPinDialog      gtki.Dialog
 	waitingForSMP       gtki.InfoBar
 	peerRequestsSMP     gtki.InfoBar
 	verificationWarning gtki.InfoBar
@@ -65,10 +66,11 @@ func (v *verifier) buildStartVerificationNotification() {
 	button := builder.getObj("button_verify").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			d := v.showNewPinDialog()
-			// TODO: remove modal window
-			d.Run()
-			d.Destroy()
+			if v.newPinDialog != nil {
+				v.newPinDialog.Present()
+			} else {
+				v.showNewPinDialog()
+			}
 		})
 	})
 	v.verificationWarning.ShowAll()
@@ -81,9 +83,9 @@ func (v *verifier) smpError(err error) {
 	v.showNotificationWhenWeCannotGeneratePINForSMP(err)
 }
 
-func (v *verifier) showNewPinDialog() gtki.Dialog {
+func (v *verifier) showNewPinDialog() {
 	pinBuilder := newBuilder("GeneratePIN")
-	sharePINDialog := pinBuilder.getObj("dialog").(gtki.Dialog)
+	v.newPinDialog = pinBuilder.getObj("dialog").(gtki.Dialog)
 	msg := pinBuilder.getObj("SharePinLabel").(gtki.Label)
 	msg.SetText(fmt.Sprintf(i18n.Local("Share the one-time PIN below with %s"), v.peer.NameForPresentation()))
 	var pinLabel gtki.Label
@@ -92,32 +94,32 @@ func (v *verifier) showNewPinDialog() gtki.Dialog {
 	)
 	pin, err := createPIN()
 	if err != nil {
-		sharePINDialog.Destroy()
+		v.newPinDialog.Destroy()
 		v.smpError(err)
-		return sharePINDialog
 	}
 	pinBuilder.ConnectSignals(map[string]interface{}{
 		"on_gen_pin": func() {
 			pin, err = createPIN()
 			if err != nil {
-				sharePINDialog.Destroy()
+				v.newPinDialog.Destroy()
 				v.smpError(err)
 			}
 			pinLabel.SetText(pin)
 		},
 		"close_share_pin": func() {
 			if v.peerRequestsSMP != nil {
-				showSMPHasAlreadyStarted(v.peer.NameForPresentation(), sharePINDialog)
+				showSMPHasAlreadyStarted(v.peer.NameForPresentation(), v.newPinDialog)
 				return
 			}
-			v.showWaitingForPeerToCompleteSMPDialog(sharePINDialog)
+			v.showWaitingForPeerToCompleteSMPDialog(v.newPinDialog)
 			v.session.StartSMP(v.peer.Jid, v.currentResource, i18n.Local("Please enter the PIN that your contact shared with you."), pin)
+			v.newPinDialog.Destroy()
+			v.newPinDialog = nil
 		},
 	})
 	pinLabel.SetText(pin)
-	sharePINDialog.SetTransientFor(v.parent)
-	sharePINDialog.ShowAll()
-	return sharePINDialog
+	v.newPinDialog.SetTransientFor(v.parent)
+	v.newPinDialog.ShowAll()
 }
 
 func (v *verifier) showWaitingForPeerToCompleteSMPDialog(sharePINDialog gtki.Dialog) {
@@ -149,6 +151,34 @@ func (v *verifier) showNotificationWhenWeCannotGeneratePINForSMP(err error) {
 	v.notifier.notify(errInfoBar)
 }
 
+func (v *verifier) buildEnterPinDialog() {
+	builder := newBuilder("EnterPIN")
+	v.enterPinDialog = builder.getObj("dialog").(gtki.Dialog)
+	v.enterPinDialog.SetTransientFor(v.parent)
+	msg := builder.getObj("verification_message").(gtki.Label)
+	msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", v.peer.NameForPresentation())))
+	button := builder.getObj("button_submit").(gtki.Button)
+	button.SetSensitive(false)
+	builder.ConnectSignals(map[string]interface{}{
+		"text_changing": func() {
+			e := builder.getObj("pin").(gtki.Entry)
+			pin, _ := e.GetText()
+			button.SetSensitive(len(pin) > 0)
+		},
+		"close_share_pin": func() {
+			e := builder.getObj("pin").(gtki.Entry)
+			pin, _ := e.GetText()
+			v.state = finishedAnsweringPeer
+			v.disableNotifications()
+			v.showWaitingForPeerToCompleteSMPDialog(v.enterPinDialog)
+			v.session.FinishSMP(v.peer.Jid, v.currentResource, pin)
+			v.enterPinDialog.Destroy()
+			v.enterPinDialog = nil
+		},
+	})
+	v.enterPinDialog.ShowAll()
+}
+
 func (v *verifier) displayRequestForSecret() {
 	v.disableNotifications()
 	b := newBuilder("PeerRequestsSMP")
@@ -156,32 +186,11 @@ func (v *verifier) displayRequestForSecret() {
 	infobarMsg := b.getObj("message").(gtki.Label)
 	verificationButton := b.getObj("verification_button").(gtki.Button)
 	verificationButton.Connect("clicked", func() {
-		builder := newBuilder("EnterPIN")
-		d := builder.getObj("dialog").(gtki.Dialog)
-		msg := builder.getObj("verification_message").(gtki.Label)
-		msg.SetText(i18n.Local(fmt.Sprintf("Type the PIN that %s sent you", v.peer.NameForPresentation())))
-		button := builder.getObj("button_submit").(gtki.Button)
-		button.SetSensitive(false)
-		builder.ConnectSignals(map[string]interface{}{
-			"text_changing": func() {
-				e := builder.getObj("pin").(gtki.Entry)
-				pin, _ := e.GetText()
-				button.SetSensitive(len(pin) > 0)
-			},
-			"close_share_pin": func() {
-				e := builder.getObj("pin").(gtki.Entry)
-				pin, _ := e.GetText()
-				v.state = finishedAnsweringPeer
-				v.disableNotifications()
-				v.showWaitingForPeerToCompleteSMPDialog(d)
-				v.session.FinishSMP(v.peer.Jid, v.currentResource, pin)
-				d.Destroy()
-			},
-		})
-		d.SetTransientFor(v.parent)
-		d.ShowAll()
-		d.Run()
-		d.Destroy()
+		if v.enterPinDialog != nil {
+			v.enterPinDialog.Present()
+		} else {
+			v.buildEnterPinDialog()
+		}
 	})
 	message := fmt.Sprintf("%s is waiting for you to finish verifying the security of this channel...", v.peer.NameForPresentation())
 	infobarMsg.SetText(i18n.Local(message))
