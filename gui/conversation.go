@@ -43,7 +43,7 @@ type conversationView interface {
 }
 
 func (conv *conversationPane) removeVerifierNotifications() {
-	conv.verifier.removeNotifications()
+	conv.verifier.removeInProgressNotifications()
 }
 
 type conversationWindow struct {

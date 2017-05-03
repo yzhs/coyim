@@ -40,6 +40,7 @@ const (
 	waitingForAnswerFromPeer
 	success
 	failure
+	smpErr
 )
 
 func newVerifier(conv *conversationPane) *verifier {
@@ -52,36 +53,34 @@ func newVerifier(conv *conversationPane) *verifier {
 	v.peer = peer
 	v.parent = conv.transientParent
 	v.currentResource = conv.currentResource()
-	v.verificationWarning = v.buildStartVerificationNotification()
+	v.buildStartVerificationNotification()
 	v.notifier.notify(v.verificationWarning)
 	return v
 }
 
-func (v *verifier) buildStartVerificationNotification() gtki.InfoBar {
+func (v *verifier) buildStartVerificationNotification() {
 	builder := newBuilder("StartVerificationNotification")
-	verificationWarning := builder.getObj("infobar").(gtki.InfoBar)
+	v.verificationWarning = builder.getObj("infobar").(gtki.InfoBar)
 	message := builder.getObj("message").(gtki.Label)
 	message.SetText(i18n.Local("Make sure no one else is reading your messages."))
 	button := builder.getObj("button_verify").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(func() {
-			d := v.showNewPinDialog(verificationWarning)
+			d := v.showNewPinDialog()
 			d.Run()
 			d.Destroy()
 		})
 	})
-	verificationWarning.ShowAll()
-	return verificationWarning
+	v.verificationWarning.ShowAll()
 }
 
 func (v *verifier) smpError(err error) {
-	if v.verificationWarning != nil {
-		v.verificationWarning.Hide()
-	}
+	v.state = smpErr
+	v.disableNotifications()
 	v.showNotificationWhenWeCannotGeneratePINForSMP(err)
 }
 
-func (v *verifier) showNewPinDialog(verificationWarning gtki.InfoBar) gtki.Dialog {
+func (v *verifier) showNewPinDialog() gtki.Dialog {
 	pinBuilder := newBuilder("GeneratePIN")
 	sharePINDialog := pinBuilder.getObj("dialog").(gtki.Dialog)
 	msg := pinBuilder.getObj("SharePinLabel").(gtki.Label)
@@ -110,7 +109,6 @@ func (v *verifier) showNewPinDialog(verificationWarning gtki.InfoBar) gtki.Dialo
 				showSMPHasAlreadyStarted(v.peer.NameForPresentation(), sharePINDialog)
 				return
 			}
-			verificationWarning.Hide()
 			v.showWaitingForPeerToCompleteSMPDialog(sharePINDialog)
 			v.session.StartSMP(v.peer.Jid, v.currentResource, i18n.Local("Please enter the PIN that your contact shared with you."), pin)
 		},
@@ -122,6 +120,8 @@ func (v *verifier) showNewPinDialog(verificationWarning gtki.InfoBar) gtki.Dialo
 }
 
 func (v *verifier) showWaitingForPeerToCompleteSMPDialog(sharePINDialog gtki.Dialog) {
+	v.state = waitingForAnswerFromPeer
+	v.disableNotifications()
 	builderWaitingSMP := newBuilder("WaitingSMPComplete")
 	waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
 	waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
@@ -219,7 +219,6 @@ func (v *verifier) displayVerificationFailure() {
 	tryLaterButton.Connect("clicked", func() {
 		doInUIThread(func() {
 			v.disableNotifications()
-			v.verificationWarning.Show()
 			d.Destroy()
 		})
 	})
@@ -230,38 +229,24 @@ func (v *verifier) displayVerificationFailure() {
 func (v *verifier) disableNotifications() {
 	switch v.state {
 	case success:
-		if v.waitingForSMP != nil {
-			v.waitingForSMP.Destroy()
-		}
-		if v.verificationWarning != nil {
-			v.verificationWarning.Destroy()
-		}
-		if v.peerRequestsSMP != nil {
-			v.peerRequestsSMP.Destroy()
-			v.peerRequestsSMP = nil
-		}
+		v.removeInProgressNotifications()
+		v.verificationWarning.Destroy()
 	case failure:
-		// TODO: This is hacky and the checks will only apply to one of the peers at a time. We should do something better.
-		if v.peerRequestsSMP != nil {
-			v.peerRequestsSMP.Destroy()
-			v.peerRequestsSMP = nil
-		}
-		if v.waitingForSMP != nil {
-			v.waitingForSMP.Destroy()
-		}
-	case peerRequestsSMP:
-		if v.verificationWarning != nil {
-			v.verificationWarning.Hide()
-		}
+		v.removeInProgressNotifications()
+		v.verificationWarning.Show()
+	case waitingForAnswerFromPeer, peerRequestsSMP, smpErr:
+		v.verificationWarning.Hide()
 	}
 }
 
-func (v *verifier) removeNotifications() {
+func (v *verifier) removeInProgressNotifications() {
 	if v.peerRequestsSMP != nil {
 		v.peerRequestsSMP.Destroy()
+		v.peerRequestsSMP = nil
 	}
 	if v.waitingForSMP != nil {
 		v.waitingForSMP.Destroy()
+		v.waitingForSMP = nil
 	}
 }
 
