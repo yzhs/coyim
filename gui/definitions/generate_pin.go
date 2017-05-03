@@ -39,7 +39,6 @@ func (*defGeneratePIN) String() string {
               <child>
                   <object class="GtkButton" id="GenPin">
                       <property name="label" translatable="yes">Generate New PIN</property>
-                      <property name="receives-default">True</property>
                       <signal name="clicked" handler="on_gen_pin"/>
                   </object>
                   <packing>

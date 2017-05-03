@@ -89,6 +89,7 @@ func (*defVerificationFailed) String() string {
                 <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
                 <child>
                   <object class="GtkButton" id="try_later">
+                    <property name="can-default">true</property>
                     <property name="label" translatable="yes">Do this later</property>
                   </object>
                 </child>
