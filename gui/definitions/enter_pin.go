@@ -56,7 +56,7 @@ func (*defEnterPIN) String() string {
             </child>
             <child>
               <object  class="GtkEntry" id="pin">
-                <signal  name="activate" handler="on_submit_signal"/>
+                <signal  name="key-press-event" handler="on_text_entry"/>
               </object>
               <packing>
                 <property name="top-attach">0</property>
