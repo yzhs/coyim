@@ -347,6 +347,7 @@ func (r *roster) presenceUpdated(account *account, from, show, showStatus string
 	}
 
 	doInUIThread(func() {
+		c.removeVerifierNotifications()
 		c.appendStatus(r.displayNameFor(account, from), time.Now(), show, showStatus, gone)
 	})
 }

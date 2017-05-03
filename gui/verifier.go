@@ -253,10 +253,15 @@ func (v *verifier) disableNotifications() {
 		if v.verificationWarning != nil {
 			v.verificationWarning.Hide()
 		}
-		// TODO: test this with someone else
-		if v.peerRequestsSMP != nil {
-			v.peerRequestsSMP.Destroy()
-		}
+	}
+}
+
+func (v *verifier) removeNotifications() {
+	if v.peerRequestsSMP != nil {
+		v.peerRequestsSMP.Destroy()
+	}
+	if v.waitingForSMP != nil {
+		v.waitingForSMP.Destroy()
 	}
 }
 

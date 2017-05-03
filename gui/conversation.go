@@ -25,6 +25,7 @@ var (
 )
 
 type conversationView interface {
+	removeVerifierNotifications()
 	showVerificationWarning(u *gtkUI)
 	updateSecurityWarning()
 	show(userInitiated bool)
@@ -39,6 +40,10 @@ type conversationView interface {
 	haveShownPrivateEndedNotification()
 	haveShownPrivateNotification()
 	handleSMPEvent(events.SMP)
+}
+
+func (conv *conversationPane) removeVerifierNotifications() {
+	conv.verifier.removeNotifications()
 }
 
 type conversationWindow struct {
