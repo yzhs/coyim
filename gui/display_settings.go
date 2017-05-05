@@ -8,8 +8,7 @@ import (
 )
 
 type displaySettings struct {
-	fontSize        uint
-	defaultFontSize uint
+	fontSize uint
 
 	provider gtki.CssProvider
 }
@@ -56,7 +55,7 @@ func (ds *displaySettings) update() {
 .currentBackgroundColor {
   background-color: #fff;
 }
-`, ds.defaultFontSize)
+`, ds.fontSize)
 	doInUIThread(func() {
 		ds.provider.LoadFromData(css)
 	})
@@ -66,9 +65,13 @@ func newDisplaySettings() *displaySettings {
 	ds := &displaySettings{}
 	prov, _ := g.gtk.CssProviderNew()
 	ds.provider = prov
-	ds.defaultFontSize = 12
+	ds.fontSize = defaultFontSize
 	return ds
 }
+
+const (
+	defaultFontSize = 10
+)
 
 func getFontSizeFrom(w gtki.Widget) uint {
 	styleContext, _ := w.GetStyleContext()

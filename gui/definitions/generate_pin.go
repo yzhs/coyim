@@ -22,7 +22,7 @@ func (*defGeneratePIN) String() string {
               <property name="spacing">6</property>
               <child>
                   <object class="GtkImage">
-                      <property name="file">build/images/Pin_1.png</property>
+                      <property name="file">build/images/smp.svg</property>
                   </object>
               </child>
               <child>
@@ -82,7 +82,7 @@ func (*defGeneratePIN) String() string {
                   <child>
                       <object class="GtkLabel">
                           <property name="visible">True</property>
-                          <property name="label" translatable="yes">Share through an encrypted channel</property>
+                          <property name="label" translatable="yes">Share through a different encrypted channel</property>
                           <property name="justify">GTK_JUSTIFY_LEFT</property>
                           <property name="halign">GTK_ALIGN_START</property>
                       </object>
@@ -122,7 +122,7 @@ func (*defGeneratePIN) String() string {
               <child>
                 <object class="GtkButton" id="button_finished">
                   <property name="can-default">true</property>
-                  <property name="label" translatable="yes">Finish</property>
+                  <property name="label" translatable="yes">Use PIN</property>
                   <signal name="clicked" handler="close_share_pin"/>
                 </object>
               </child>

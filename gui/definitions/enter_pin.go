@@ -31,7 +31,8 @@ func (*defEnterPIN) String() string {
         </child>
         <child>
           <object  class="GtkImage">
-            <property  name="file">build/images/enter_pin.svg</property>
+            <property name="file">build/images/smp.svg</property>
+            <property name="margin-bottom">10</property>
           </object>
         </child>
         <child>
@@ -42,6 +43,7 @@ func (*defEnterPIN) String() string {
         <child>
           <object class="GtkLabel">
             <property name="label" translatable="yes">It can only be used once.</property>
+            <property name="margin-bottom">10</property>
           </object>
         </child>
         <child>
@@ -61,6 +63,7 @@ func (*defEnterPIN) String() string {
             <child>
               <object  class="GtkEntry" id="pin">
                 <property name="buffer">pin_entry_buffer</property>
+                <property name="margin-bottom">10</property>
               </object>
               <packing>
                 <property name="top-attach">0</property>
@@ -71,6 +74,7 @@ func (*defEnterPIN) String() string {
         <child>
           <object class="GtkLabel">
             <property name="label" translatable="yes">Your contact must have shared it with you previously. If not, try to:</property>
+            <property name="margin-bottom">5</property>
           </object>
         </child>
         <child>
@@ -110,7 +114,7 @@ func (*defEnterPIN) String() string {
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Ask in another encrypted channel (not this one)</property>
+                    <property name="label" translatable="yes">Ask in a different encrypted channel</property>
                     <property name="justify">GTK_JUSTIFY_LEFT</property>
                     <property name="halign">GTK_ALIGN_START</property>
                 </object>
@@ -147,7 +151,7 @@ func (*defEnterPIN) String() string {
             <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
             <child>
               <object class="GtkButton" id="button_submit">
-                <property name="label" translatable="yes">Submit</property>
+                <property name="label" translatable="yes">Verify PIN</property>
                 <signal name="clicked" handler="close_share_pin"/>
               </object>
             </child>

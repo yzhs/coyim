@@ -288,7 +288,7 @@ func createConversationPane(account *account, uid string, ui *gtkUI, transientPa
 		"messageScroll", &cp.entryScroll,
 	)
 
-	cp.verifier = newVerifier(cp)
+	cp.verifier = newVerifier(cp, ui.displaySettings)
 
 	builder.ConnectSignals(map[string]interface{}{
 		"on_start_otr_signal": cp.onStartOtrSignal,

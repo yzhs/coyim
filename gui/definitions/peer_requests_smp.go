@@ -27,8 +27,14 @@ func (*defPeerRequestsSMP) String() string {
             <property name="label" translatable="yes">Finish verification</property>
           </object>
         </child>
+        <child>
+          <object class="GtkButton" id="cancel_button">
+            <property name="label" translatable="yes">Cancel</property>
+          </object>
+        </child>
       </object>
     </child>
   </object>
-</interface>`
+</interface>
+`
 }

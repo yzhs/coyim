@@ -18,7 +18,6 @@ func (*defVerificationFailed) String() string {
         <child>
           <object class="GtkGrid">
             <property name="halign">GTK_ALIGN_CENTER</property>
-            <property name="row-spacing">60</property>
             <child>
               <object  class="GtkImage">
                 <property name="file">build/images/red_alert.png</property>
@@ -29,12 +28,13 @@ func (*defVerificationFailed) String() string {
               </packing>
             </child>
             <child>
-              <object class="GtkLabel">
+              <object class="GtkLabel" id="header">
                 <property name="label" translatable="yes">Verification Failed</property>
+                <property name="margin-bottom">10</property>
               </object>
               <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">0</property>
+                <property name="left-attach">0</property>
+                <property name="top-attach">1</property>
               </packing>
             </child>
           </object>
@@ -42,6 +42,7 @@ func (*defVerificationFailed) String() string {
         <child>
           <object class="GtkLabel" id="verification_message">
             <property name="label" translatable="yes"></property>
+            <property name="margin-bottom">10</property>
           </object>
         </child>
         <child>
@@ -51,7 +52,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes"> - The peer that sent the PIN sent the incorrect PIN</property>
+                <property name="label" translatable="yes">Maybe...</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -63,7 +64,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes"> - The peer that entered the PIN did so incorrectly</property>
+                <property name="label" translatable="yes">The peer that sent the PIN sent the incorrect PIN</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -75,13 +76,25 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes"> - Someone is listening in on this conversation</property>
+                <property name="label" translatable="yes">The peer that entered the PIN did so incorrectly</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>
                 <property name="top-attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Someone is listening in on this conversation</property>
+                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                <property name="halign">GTK_ALIGN_START</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">3</property>
               </packing>
             </child>
             <child internal-child="action_area">
@@ -100,5 +113,6 @@ func (*defVerificationFailed) String() string {
       </object>
     </child>
   </object>
-</interface>`
+</interface>
+`
 }
