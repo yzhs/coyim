@@ -67,7 +67,7 @@ func (v *verifier) buildStartVerificationNotification() {
 	builder := newBuilder("StartVerificationNotification")
 	v.verificationWarning = builder.getObj("infobar").(gtki.InfoBar)
 	message := builder.getObj("message").(gtki.Label)
-	message.SetText(i18n.Local("Make sure no one else is reading your messages."))
+	message.SetText(i18n.Local("Tenha certeza que ninguém está lendo suas mensagens."))
 	sc, _ := message.GetStyleContext()
 	sc.AddProvider(v.displayController.provider, 9999)
 	sc.AddClass("start-verification-msg")
@@ -138,7 +138,7 @@ func (v *verifier) showNewPinDialog() {
 				return
 			}
 			v.showWaitingForPeerToCompleteSMPDialog()
-			v.session.StartSMP(v.peer.Jid, v.currentResource, i18n.Local("Please enter the PIN that your contact shared with you."), pin)
+			v.session.StartSMP(v.peer.Jid, v.currentResource, i18n.Local("Por favor digite o código que o teu contato te enviou"), pin)
 			v.newPinDialog.Destroy()
 			v.newPinDialog = nil
 		},
@@ -196,7 +196,7 @@ func (v *verifier) showNotificationWhenWeCannotGeneratePINForSMP(err error) {
 	errBuilder := newBuilder("CannotVerifyWithSMP")
 	errInfoBar := errBuilder.getObj("error_verifying_smp").(gtki.InfoBar)
 	message := errBuilder.getObj("message").(gtki.Label)
-	message.SetText(i18n.Local("Unable to verify the channel at this time."))
+	message.SetText(i18n.Local("Não é possível verificar o canal agora."))
 	button := errBuilder.getObj("try_later_button").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(errInfoBar.Destroy)
