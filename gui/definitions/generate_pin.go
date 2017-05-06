@@ -38,7 +38,7 @@ func (*defGeneratePIN) String() string {
               </child>
               <child>
                   <object class="GtkButton" id="GenPin">
-                      <property name="label" translatable="yes">Generate New PIN</property>
+                      <property name="label" translatable="yes">Gerar um novo código</property>
                       <signal name="clicked" handler="on_gen_pin"/>
                   </object>
                   <packing>
@@ -61,7 +61,7 @@ func (*defGeneratePIN) String() string {
                   <child>
                       <object class="GtkLabel">
                           <property name="visible">True</property>
-                          <property name="label" translatable="yes">Share in person</property>
+                          <property name="label" translatable="yes">Compartilhar pessoalmente</property>
                           <property name="justify">GTK_JUSTIFY_LEFT</property>
                           <property name="halign">GTK_ALIGN_START</property>
                       </object>
@@ -82,7 +82,7 @@ func (*defGeneratePIN) String() string {
                   <child>
                       <object class="GtkLabel">
                           <property name="visible">True</property>
-                          <property name="label" translatable="yes">Share through a different encrypted channel</property>
+                          <property name="label" translatable="yes">Compartilhar através de outra aplicação criptografada</property>
                           <property name="justify">GTK_JUSTIFY_LEFT</property>
                           <property name="halign">GTK_ALIGN_START</property>
                       </object>
@@ -103,7 +103,7 @@ func (*defGeneratePIN) String() string {
                   <child>
                       <object class="GtkLabel">
                           <property name="visible">True</property>
-                          <property name="label" translatable="yes">Share in a phone call</property>
+                          <property name="label" translatable="yes">Compartilhar pelo telefone</property>
                           <property name="justify">GTK_JUSTIFY_LEFT</property>
                           <property name="halign">GTK_ALIGN_START</property>
                       </object>
@@ -122,7 +122,7 @@ func (*defGeneratePIN) String() string {
               <child>
                 <object class="GtkButton" id="button_finished">
                   <property name="can-default">true</property>
-                  <property name="label" translatable="yes">Use PIN</property>
+                  <property name="label" translatable="yes">Usar código</property>
                   <signal name="clicked" handler="close_share_pin"/>
                 </object>
               </child>

@@ -42,7 +42,7 @@ func (*defEnterPIN) String() string {
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">It can only be used once.</property>
+            <property name="label" translatable="yes">Isso pode ser usado somente uma vez.</property>
             <property name="margin-bottom">10</property>
           </object>
         </child>
@@ -51,7 +51,7 @@ func (*defEnterPIN) String() string {
             <property name="halign">GTK_ALIGN_CENTER</property>
             <child>
               <object  class="GtkLabel">
-                <property name="label" translatable="yes">PIN:</property>
+                <property name="label" translatable="yes">CÓDIGO:</property>
                 <property name="justify">GTK_JUSTIFY_RIGHT</property>
               </object>
               <packing>
@@ -73,7 +73,7 @@ func (*defEnterPIN) String() string {
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Your contact must have shared it with you previously. If not, try to:</property>
+            <property name="label" translatable="yes">Seu contato deverá ter compartilhado isso com você anteriormente. Se não, tente:</property>
             <property name="margin-bottom">5</property>
           </object>
         </child>
@@ -93,7 +93,7 @@ func (*defEnterPIN) String() string {
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Ask in person</property>
+                    <property name="label" translatable="yes">Perguntar pessoalmente</property>
                     <property name="justify">GTK_JUSTIFY_LEFT</property>
                     <property name="halign">GTK_ALIGN_START</property>
                 </object>
@@ -114,7 +114,7 @@ func (*defEnterPIN) String() string {
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Ask in a different encrypted channel</property>
+                    <property name="label" translatable="yes">Perguntar em outra aplicação criptografada</property>
                     <property name="justify">GTK_JUSTIFY_LEFT</property>
                     <property name="halign">GTK_ALIGN_START</property>
                 </object>
@@ -135,7 +135,7 @@ func (*defEnterPIN) String() string {
             <child>
                 <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Ask over the phone</property>
+                    <property name="label" translatable="yes">Perguntar pelo telefone</property>
                     <property name="justify">GTK_JUSTIFY_LEFT</property>
                     <property name="halign">GTK_ALIGN_START</property>
                 </object>
@@ -151,7 +151,7 @@ func (*defEnterPIN) String() string {
             <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
             <child>
               <object class="GtkButton" id="button_submit">
-                <property name="label" translatable="yes">Verify PIN</property>
+                <property name="label" translatable="yes">Verificar o código</property>
                 <signal name="clicked" handler="close_share_pin"/>
               </object>
             </child>

@@ -105,7 +105,7 @@ func (v *verifier) showNewPinDialog() {
 	v.newPinDialog = pinBuilder.getObj("dialog").(gtki.Dialog)
 	v.newPinDialog.HideOnDelete()
 	msg := pinBuilder.getObj("SharePinLabel").(gtki.Label)
-	msg.SetText(i18n.Localf("Share the one-time PIN below with %s", v.peer.NameForPresentation()))
+	msg.SetText(i18n.Localf("Compartilhe o código temporário que está abaixo com %s", v.peer.NameForPresentation()))
 	var pinLabel gtki.Label
 	pinBuilder.getItems(
 		"PinLabel", &pinLabel,
@@ -161,7 +161,7 @@ func (v *verifier) showSMPHasAlreadyStarted(peerName string) {
 	b := newBuilder("SMPHasAlreadyStarted")
 	d := b.getObj("dialog").(gtki.Dialog)
 	msg := b.getObj("smp_has_already_started").(gtki.Label)
-	msg.SetText(i18n.Localf("%s has already started verification and generated a PIN.\nPlease ask them for it.", peerName))
+	msg.SetText(i18n.Localf("%s já começou a verificação e gerou um código.\nPor favor pergunte que código foi gerado.", peerName))
 	button := b.getObj("button_ok").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(d.Destroy)
@@ -178,7 +178,7 @@ func (v *verifier) showWaitingForPeerToCompleteSMPDialog() {
 	builderWaitingSMP := newBuilder("WaitingSMPComplete")
 	waitingInfoBar := builderWaitingSMP.getObj("smp_waiting_infobar").(gtki.InfoBar)
 	waitingSMPMessage := builderWaitingSMP.getObj("message").(gtki.Label)
-	waitingSMPMessage.SetText(i18n.Localf("Waiting for %s to finish securing the channel...", v.peer.NameForPresentation()))
+	waitingSMPMessage.SetText(i18n.Localf("Esperando %s terminar a verificação do canal...", v.peer.NameForPresentation()))
 	b := builderWaitingSMP.getObj("cancel_button").(gtki.Button)
 	b.Connect("clicked", func() {
 		//v.session.AbortSMP() TODO: allow this
@@ -211,7 +211,7 @@ func (v *verifier) buildEnterPinDialog() {
 	v.enterPinDialog.SetTransientFor(v.parent)
 	v.enterPinDialog.HideOnDelete()
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Localf("Type the PIN that %s sent you", v.peer.NameForPresentation()))
+	msg.SetText(i18n.Localf("Digite o código que %s enviou para você", v.peer.NameForPresentation()))
 	button := builder.getObj("button_submit").(gtki.Button)
 	button.SetSensitive(false)
 	builder.ConnectSignals(map[string]interface{}{
@@ -253,7 +253,7 @@ func (v *verifier) displayRequestForSecret() {
 		v.peerRequestsSMP = nil
 		v.verificationWarning.Show()
 	})
-	infobarMsg.SetText(i18n.Localf("%s is waiting for you to finish verifying the security of this channel...", v.peer.NameForPresentation()))
+	infobarMsg.SetText(i18n.Localf("%s está esperando você terminar de verificar a segurança desse canal...", v.peer.NameForPresentation()))
 	infobar.ShowAll()
 	v.peerRequestsSMP = infobar
 	v.notifier.notify(infobar)
@@ -263,7 +263,7 @@ func (v *verifier) displayVerificationSuccess() {
 	builder := newBuilder("VerificationSucceeded")
 	d := builder.getObj("dialog").(gtki.Dialog)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Localf("Hooray! No one is listening in on your conversations with %s", v.peer.NameForPresentation()))
+	msg.SetText(i18n.Localf("Yeeeee! Ninguém está espiando suas conversas com %s", v.peer.NameForPresentation()))
 	button := builder.getObj("button_ok").(gtki.Button)
 	button.Connect("clicked", func() {
 		doInUIThread(d.Destroy)
@@ -286,7 +286,7 @@ func (v *verifier) displayVerificationFailure() {
 			font-size: 30px;
 		}`)
 	msg := builder.getObj("verification_message").(gtki.Label)
-	msg.SetText(i18n.Localf("We failed to verify this channel with %s.", v.peer.NameForPresentation()))
+	msg.SetText(i18n.Localf("A verificação desse canal com %s falhou.", v.peer.NameForPresentation()))
 	tryLaterButton := builder.getObj("try_later").(gtki.Button)
 	tryLaterButton.Connect("clicked", func() {
 		doInUIThread(func() {

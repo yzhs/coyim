@@ -29,7 +29,7 @@ func (*defVerificationFailed) String() string {
             </child>
             <child>
               <object class="GtkLabel" id="header">
-                <property name="label" translatable="yes">Verification Failed</property>
+                <property name="label" translatable="yes">Falha na verificação</property>
                 <property name="margin-bottom">10</property>
               </object>
               <packing>
@@ -52,7 +52,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Maybe...</property>
+                <property name="label" translatable="yes">Talvez...</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -64,7 +64,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">The peer that sent the PIN sent the incorrect PIN</property>
+                <property name="label" translatable="yes">Parece que o código está errado</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -76,7 +76,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">The peer that entered the PIN did so incorrectly</property>
+                <property name="label" translatable="yes">A outra pessoa digitou o código errado</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -88,7 +88,7 @@ func (*defVerificationFailed) String() string {
             <child>
               <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Someone is listening in on this conversation</property>
+                <property name="label" translatable="yes">Alguém pode estar espiando essa conversa</property>
                 <property name="justify">GTK_JUSTIFY_LEFT</property>
                 <property name="halign">GTK_ALIGN_START</property>
               </object>
@@ -103,7 +103,7 @@ func (*defVerificationFailed) String() string {
                 <child>
                   <object class="GtkButton" id="try_later">
                     <property name="can-default">true</property>
-                    <property name="label" translatable="yes">Do this later</property>
+                    <property name="label" translatable="yes">Depois eu faço</property>
                   </object>
                 </child>
               </object>

@@ -42,7 +42,7 @@ func (*defStartVerificationNotification) String() string {
           </child>
           <child>
             <object class="GtkButton" id="button_verify">
-              <property name="label" translatable="yes">Validate Secure Channel</property>
+              <property name="label" translatable="yes">Validar A Segurança desse Canal</property>
               <property name="can-default">true</property>
             </object>
             <packing>

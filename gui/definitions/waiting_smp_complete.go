@@ -24,7 +24,7 @@ func (*defWaitingSMPComplete) String() string {
         <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
         <child>
           <object class="GtkButton" id="cancel_button">
-            <property name="label" translatable="yes">Cancel</property>
+            <property name="label" translatable="yes">Cancelar</property>
           </object>
         </child>
       </object>
