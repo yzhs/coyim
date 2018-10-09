@@ -84,12 +84,12 @@ func (u *gtkUI) defaultLightColorSet() colorSet {
 
 func (u *gtkUI) defaultDarkColorSet() colorSet {
 	return colorSet{
-		rosterPeerBackground:                      "#7f7f7f",
+		rosterPeerBackground:                      "#111111",
 		rosterPeerOfflineForeground:               "#aaaaaa",
 		rosterPeerOnlineForeground:                "#e5e5e5",
 		rosterGroupBackground:                     "#b8b6bf",
-		rosterAccountOnlineBackground:             "#d5d3de",
-		rosterAccountOfflineBackground:            "#918caa",
+		rosterAccountOnlineBackground:             "#444444",
+		rosterAccountOfflineBackground:            "#000000",
 		conversationOutgoingUserForeground:        "#3465a4",
 		conversationIncomingUserForeground:        "#a40000",
 		conversationOutgoingTextForeground:        "#7f7f7f",
